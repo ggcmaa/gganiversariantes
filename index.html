@@ -4,68 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Aniversariantes</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root {
-            --primary: #25d366;
-            --secondary: #128c7e;
-            --dark: #075e54;
-            --light: #f0f2f5;
-        }
-
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        
-        /* Abas */
+        :root { --primary: #25d366; --secondary: #128c7e; --light: #f0f2f5; }
+        body { font-family: sans-serif; background: var(--light); padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; }
+        .tab-btn { padding: 10px; cursor: pointer; border: none; background: none; font-weight: bold; }
         .tab-btn.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        /* Estilos Gerais */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
         th { background: var(--secondary); color: white; }
-        
-        .upload-section { margin-bottom: 20px; padding: 15px; border: 2px dashed #ccc; border-radius: 8px; text-align: center; }
-        
-        /* Cartão */
-        .card-preview { 
-            border: 2px solid var(--secondary); 
-            padding: 30px; 
-            border-radius: 15px; 
-            text-align: center; 
-            background: #fff;
-            margin: 20px 0;
-            background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        }
-        
-        .btn-whatsapp { 
-            background: var(--primary); 
-            color: white; 
-            padding: 12px 25px; 
-            border: none; 
-            border-radius: 25px; 
-            cursor: pointer; 
-            font-size: 16px;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-whatsapp:hover { background: var(--secondary); }
-        
-        select, input { padding: 8px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        .card { border: 2px solid var(--secondary); padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0; background: #fff; }
+        .btn { background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🎉 Gestão de Aniversariantes</h2>
-
-    <div class="upload-section">
-        <label>Selecione a base Excel (Colunas: Nome, Data de Nascimento, Gestão):</label><br><br>
-        <input type="file" id="uploadExcel" accept=".xlsx, .xls">
-    </div>
+    <h2 id="status">Carregando dados... ⏳</h2>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="openTab('listagem')">Aniversariantes do Dia</button>
@@ -73,115 +32,93 @@
     </div>
 
     <div id="listagem" class="tab-content active">
-        <table id="tabelaAniversariantes">
+        <table>
             <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Data de Nasc.</th>
-                    <th>Gestão Imediata</th>
-                </tr>
+                <tr><th>Nome</th><th>Data</th><th>Gestão</th></tr>
             </thead>
-            <tbody>
-                </tbody>
+            <tbody id="tabelaBody"></tbody>
         </table>
     </div>
 
     <div id="gerador" class="tab-content">
-        <label>Selecione o Colaborador:</label>
-        <select id="selectColaborador" onchange="atualizarPreview()">
-            <option value="">Carregue o Excel primeiro...</option>
-        </select>
-
-        <div class="card-preview" id="cartao">
-            <h1 style="color: var(--dark);">Parabéns! 🎂</h1>
-            <p style="font-size: 1.2em;">Olá, <strong id="nomeCard">Fulano</strong>!</p>
-            <p>Desejamos a você muita saúde, paz e conquistas neste novo ciclo.</p>
-            <p>Equipe <strong><span id="gestaoCard">Gestão</span></strong></p>
+        <select id="selectColaborador" onchange="atualizarCard()" style="width:100%; padding:10px; margin-bottom:10px;"></select>
+        <div class="card" id="cartao">
+            <h3>Parabéns, <span id="nomeCard">...</span>! 🎂</h3>
+            <p>Muita saúde e sucesso!</p>
+            <p>Gestão: <strong id="gestaoCard">...</strong></p>
         </div>
-
-        <button class="btn-whatsapp" onclick="enviarWhatsApp()">Enviar por WhatsApp Web</button>
+        <button class="btn" onclick="enviarWhats()">Enviar WhatsApp</button>
     </div>
 </div>
 
 <script>
-    let dadosColaboradores = [];
+    let dados = [];
+    const EXCEL_URL = 'base.xlsx'; // Nome do arquivo que você vai subir no GitHub
 
-    // Troca de Abas
-    function openTab(tabId) {
+    // Carregar Excel automaticamente ao abrir o site
+    window.onload = async () => {
+        try {
+            const response = await fetch(EXCEL_URL);
+            const arrayBuffer = await response.arrayBuffer();
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            dados = XLSX.utils.sheet_to_json(sheet);
+            
+            document.getElementById('status').textContent = "🎉 Portal de Aniversariantes";
+            processar();
+        } catch (e) {
+            document.getElementById('status').textContent = "❌ Erro ao carregar base.xlsx";
+            console.error(e);
+        }
+    };
+
+    function processar() {
+        const hoje = new Date();
+        const diaH = hoje.getDate();
+        const mesH = hoje.getMonth() + 1;
+        
+        const tbody = document.getElementById('tabelaBody');
+        const select = document.getElementById('selectColaborador');
+        
+        dados.forEach((c, i) => {
+            // Ajuste de data do Excel
+            let dNasc = new Date((c['Data de Nascimento'] - 25569) * 86400 * 1000);
+            if(isNaN(dNasc)) dNasc = new Date(c['Data de Nascimento']);
+            
+            const dia = dNasc.getUTCDate();
+            const mes = dNasc.getUTCMonth() + 1;
+
+            // Popular Select
+            select.innerHTML += `<option value="${i}">${c['Nome']}</option>`;
+
+            // Listar se for hoje
+            if(dia === diaH && mes === mesH) {
+                tbody.innerHTML += `<tr><td>${c['Nome']}</td><td>${dia}/${mes}</td><td>${c['Gestão']}</td></tr>`;
+            }
+        });
+        atualizarCard();
+    }
+
+    function openTab(id) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
         event.currentTarget.classList.add('active');
     }
 
-    // Processar Excel
-    document.getElementById('uploadExcel').addEventListener('change', function(e) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const firstSheet = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheet];
-            dadosColaboradores = XLSX.utils.sheet_to_json(worksheet);
-            
-            processarDados();
-        };
-        reader.readAsArrayBuffer(e.target.files[0]);
-    });
-
-    function processarDados() {
-        const hoje = new Date();
-        const diaHoje = hoje.getDate();
-        const mesHoje = hoje.getMonth() + 1;
-
-        const tbody = document.querySelector('#tabelaAniversariantes tbody');
-        const select = document.getElementById('selectColaborador');
-        tbody.innerHTML = '';
-        select.innerHTML = '<option value="">Selecione...</option>';
-
-        dadosColaboradores.forEach((colab, index) => {
-            // Converter data do Excel (pode vir como número ou string)
-            let dataNasc = new Date((colab['Data de Nascimento'] - (25567 + 1)) * 86400 * 1000);
-            if(isNaN(dataNasc)) dataNasc = new Date(colab['Data de Nascimento']);
-            
-            const dia = dataNasc.getDate() + 1;
-            const mes = dataNasc.getMonth() + 1;
-            const dataFormatada = `${dia.toString().padStart(2, '0')}/${mes.toString().padStart(2, '0')}`;
-
-            // Adicionar ao Select do gerador
-            let opt = document.createElement('option');
-            opt.value = index;
-            opt.textContent = colab['Nome'];
-            select.appendChild(opt);
-
-            // Se for hoje, adiciona na tabela
-            if(dia === diaHoje && mes === mesHoje) {
-                let row = `<tr>
-                    <td>${colab['Nome']}</td>
-                    <td>${dataFormatada}</td>
-                    <td>${colab['Gestão'] || colab['Gestão Imediata']}</td>
-                </tr>`;
-                tbody.innerHTML += row;
-            }
-        });
+    function atualizarCard() {
+        const c = dados[document.getElementById('selectColaborador').value];
+        if(!c) return;
+        document.getElementById('nomeCard').textContent = c['Nome'];
+        document.getElementById('gestaoCard').textContent = c['Gestão'];
     }
 
-    function atualizarPreview() {
-        const index = document.getElementById('selectColaborador').value;
-        if(index === "") return;
-
-        const colab = dadosColaboradores[index];
-        document.getElementById('nomeCard').textContent = colab['Nome'];
-        document.getElementById('gestaoCard').textContent = colab['Gestão'] || colab['Gestão Imediata'];
-    }
-
-    function enviarWhatsApp() {
+    function enviarWhats() {
         const nome = document.getElementById('nomeCard').textContent;
-        const msg = `Olá ${nome}! 🎉%0A%0APassando para te desejar um Feliz Aniversário! Muita saúde, paz e sucesso em sua jornada.%0A%0AAtenciosamente,%0AEquipe de Gestão.`;
-        const url = `https://web.whatsapp.com/send?text=${msg}`;
-        window.open(url, '_blank');
+        const msg = window.encodeURIComponent(`Parabéns ${nome}! 🎉 Feliz aniversário!`);
+        window.open(`https://web.whatsapp.com/send?text=${msg}`, '_blank');
     }
 </script>
-
 </body>
 </html>
