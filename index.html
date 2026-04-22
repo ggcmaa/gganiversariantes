@@ -7,24 +7,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #25d366; --secondary: #128c7e; --light: #f0f2f5; }
-        body { font-family: sans-serif; background: var(--light); padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab-btn { padding: 10px; cursor: pointer; border: none; background: none; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--light); margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.9em; margin-bottom: 15px; display: inline-block; }
+        .loading { background: #fff3cd; color: #856404; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #ddd; }
+        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-weight: bold; transition: 0.3s; color: #666; }
         .tab-btn.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
-        .tab-content { display: none; }
+        .tab-content { display: none; animation: fadeIn 0.5s; }
         .tab-content.active { display: block; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background: var(--secondary); color: white; }
-        .card { border: 2px solid var(--secondary); padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0; background: #fff; }
-        .btn { background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: var(--secondary); color: white; border-radius: 4px; }
+        .card { border: 2px dashed var(--secondary); padding: 30px; text-align: center; border-radius: 15px; margin: 20px 0; background: #fff; }
+        .btn { background: var(--primary); color: white; padding: 12px 25px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 id="status">Carregando dados... ⏳</h2>
+    <div id="status" class="status-badge loading">Tentando ler base.xlsx...</div>
+    <h2 style="margin-top: 0;">🎉 Portal de Aniversariantes</h2>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="openTab('listagem')">Aniversariantes do Dia</button>
@@ -34,46 +40,59 @@
     <div id="listagem" class="tab-content active">
         <table>
             <thead>
-                <tr><th>Nome</th><th>Data</th><th>Gestão</th></tr>
+                <tr><th>Colaborador</th><th>Data</th><th>Gestão</th></tr>
             </thead>
             <tbody id="tabelaBody"></tbody>
         </table>
     </div>
 
     <div id="gerador" class="tab-content">
-        <select id="selectColaborador" onchange="atualizarCard()" style="width:100%; padding:10px; margin-bottom:10px;"></select>
-        <div class="card" id="cartao">
-            <h3>Parabéns, <span id="nomeCard">...</span>! 🎂</h3>
-            <p>Muita saúde e sucesso!</p>
-            <p>Gestão: <strong id="gestaoCard">...</strong></p>
+        <label>Selecione o aniversariante:</label>
+        <select id="selectColaborador" onchange="atualizarCard()" style="width:100%; padding:12px; margin: 15px 0; border-radius: 8px; border: 1px solid #ccc;"></select>
+        
+        <div class="card">
+            <h1 style="color: var(--secondary); margin: 0;">Feliz Aniversário!</h1>
+            <h2 id="nomeCard" style="margin: 10px 0;">---</h2>
+            <p>Desejamos muito sucesso e felicidade em sua vida!</p>
+            <p style="font-size: 0.9em; color: #666;">Equipe: <strong id="gestaoCard">---</strong></p>
         </div>
-        <button class="btn" onclick="enviarWhats()">Enviar WhatsApp</button>
+        <div style="text-align: center;">
+            <button class="btn" onclick="enviarWhats()">📱 Enviar pelo WhatsApp Web</button>
+        </div>
     </div>
 </div>
 
 <script>
-    let dados = [];
-    const EXCEL_URL = 'base.xlsx'; // Nome do arquivo que você vai subir no GitHub
+    let dadosGlobal = [];
 
-    // Carregar Excel automaticamente ao abrir o site
-    window.onload = async () => {
+    // Função para carregar o arquivo
+    async function carregarDados() {
+        const status = document.getElementById('status');
         try {
-            const response = await fetch(EXCEL_URL);
+            // O arquivo deve estar na mesma pasta no GitHub
+            const response = await fetch('base.xlsx');
+            if (!response.ok) throw new Error('Arquivo base.xlsx não encontrado.');
+            
             const arrayBuffer = await response.arrayBuffer();
             const data = new Uint8Array(arrayBuffer);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            dados = XLSX.utils.sheet_to_json(sheet);
+            const workbook = XLSX.read(data, {type: 'array', cellDates: true}); // cellDates ajuda com o erro de "hung"
+            const firstSheet = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[firstSheet];
             
-            document.getElementById('status').textContent = "🎉 Portal de Aniversariantes";
-            processar();
-        } catch (e) {
-            document.getElementById('status').textContent = "❌ Erro ao carregar base.xlsx";
-            console.error(e);
+            dadosGlobal = XLSX.utils.sheet_to_json(sheet);
+            
+            status.textContent = "✅ Dados carregados com sucesso!";
+            status.className = "status-badge success";
+            
+            popularTudo();
+        } catch (error) {
+            status.textContent = "❌ Erro: " + error.message;
+            status.className = "status-badge error";
+            console.error(error);
         }
-    };
+    }
 
-    function processar() {
+    function popularTudo() {
         const hoje = new Date();
         const diaH = hoje.getDate();
         const mesH = hoje.getMonth() + 1;
@@ -81,44 +100,68 @@
         const tbody = document.getElementById('tabelaBody');
         const select = document.getElementById('selectColaborador');
         
-        dados.forEach((c, i) => {
-            // Ajuste de data do Excel
-            let dNasc = new Date((c['Data de Nascimento'] - 25569) * 86400 * 1000);
-            if(isNaN(dNasc)) dNasc = new Date(c['Data de Nascimento']);
+        tbody.innerHTML = '';
+        select.innerHTML = '<option value="">Escolha um colaborador...</option>';
+
+        dadosGlobal.forEach((colab, i) => {
+            let dataNasc = colab['Data de Nascimento'];
             
-            const dia = dNasc.getUTCDate();
-            const mes = dNasc.getUTCMonth() + 1;
+            // Tratamento seguro de data
+            if (!(dataNasc instanceof Date)) {
+                dataNasc = new Date(dataNasc);
+            }
 
-            // Popular Select
-            select.innerHTML += `<option value="${i}">${c['Nome']}</option>`;
+            if (!isNaN(dataNasc)) {
+                const dia = dataNasc.getUTCDate();
+                const mes = dataNasc.getUTCMonth() + 1;
+                const dataFormatada = `${dia.toString().padStart(2, '0')}/${mes.toString().padStart(2, '0')}`;
 
-            // Listar se for hoje
-            if(dia === diaH && mes === mesH) {
-                tbody.innerHTML += `<tr><td>${c['Nome']}</td><td>${dia}/${mes}</td><td>${c['Gestão']}</td></tr>`;
+                // Adiciona no select do gerador
+                select.innerHTML += `<option value="${i}">${colab['Nome']}</option>`;
+
+                // Verifica se é hoje
+                if (dia === diaH && mes === mesH) {
+                    tbody.innerHTML += `<tr>
+                        <td><strong>${colab['Nome']}</strong></td>
+                        <td>${dataFormatada}</td>
+                        <td>${colab['Gestão'] || 'N/A'}</td>
+                    </tr>`;
+                }
             }
         });
-        atualizarCard();
+
+        if(tbody.innerHTML === '') {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center">Nenhum aniversariante hoje.</td></tr>';
+        }
     }
 
     function openTab(id) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
         event.currentTarget.classList.add('active');
     }
 
     function atualizarCard() {
-        const c = dados[document.getElementById('selectColaborador').value];
-        if(!c) return;
-        document.getElementById('nomeCard').textContent = c['Nome'];
-        document.getElementById('gestaoCard').textContent = c['Gestão'];
+        const index = document.getElementById('selectColaborador').value;
+        if(index === "") return;
+        
+        const colab = dadosGlobal[index];
+        document.getElementById('nomeCard').textContent = colab['Nome'];
+        document.getElementById('gestaoCard').textContent = colab['Gestão'] || 'Gestão Imediata';
     }
 
     function enviarWhats() {
         const nome = document.getElementById('nomeCard').textContent;
-        const msg = window.encodeURIComponent(`Parabéns ${nome}! 🎉 Feliz aniversário!`);
+        if(nome === "---") return alert("Selecione alguém primeiro!");
+        
+        const msg = encodeURIComponent(`Olá ${nome}! 🎉\n\nDesejamos um Feliz Aniversário, muita saúde e sucesso! 🎂✨`);
         window.open(`https://web.whatsapp.com/send?text=${msg}`, '_blank');
     }
+
+    // Iniciar
+    carregarDados();
 </script>
+
 </body>
 </html>
