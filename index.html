@@ -7,59 +7,63 @@
     <style>
         :root { --primary: #25d366; --secondary: #128c7e; --light: #f0f2f5; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--light); padding: 20px; margin: 0; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
-        .status-badge { padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 0.9em; }
+        .status-badge { padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 0.9em; }
         .success { background: #e8f5e9; color: #2e7d32; }
         .loading { background: #e3f2fd; color: #1976d2; }
+        .error { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
 
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
-        .tab-btn { padding: 12px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; }
+        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; font-size: 1em; }
         .tab-btn.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
         
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        .filters { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+        .filters { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; background: #f1f3f4; padding: 15px; border-radius: 8px; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background: var(--secondary); color: white; white-space: nowrap; }
-        tr:hover { background-color: #f5f5f5; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: var(--secondary); color: white; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; }
+        tr:hover { background-color: #f9f9f9; }
         
-        .btn-mini { background: var(--secondary); color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        .btn-mini { background: var(--secondary); color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-mini:hover { background: #0b5e54; }
         
-        .card { border: 2px solid var(--secondary); padding: 30px; text-align: center; border-radius: 15px; margin: 20px 0; background: #fff; }
-        .btn-whats { background: var(--primary); color: white; padding: 15px 35px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: 0.3s; }
-        .btn-whats:hover { transform: scale(1.05); }
+        .card { border: 2px solid var(--secondary); padding: 40px; text-align: center; border-radius: 20px; margin: 20px 0; background: #fff; box-shadow: inset 0 0 50px rgba(0,0,0,0.02); }
+        .btn-whats { background: var(--primary); color: white; padding: 18px 40px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: 0.3s; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); }
+        .btn-whats:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4); }
 
-        select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; min-width: 150px; }
+        select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; outline: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="status" class="status-badge loading">Sincronizando dados...</div>
+    <div id="status" class="status-badge loading">🔄 Conectando ao Google Sheets...</div>
 
     <div class="tabs">
         <button class="tab-btn active" id="btn-tab-listagem" onclick="openTab('listagem')">Aniversariantes do Dia</button>
-        <button class="tab-btn" id="btn-tab-gerador" onclick="openTab('gerador')">Gerar Cartão</button>
+        <button class="tab-btn" id="btn-tab-gerador" onclick="openTab('gerador')">Gerar Cartão Individual</button>
     </div>
 
     <div id="listagem" class="tab-content active">
         <div class="filters">
-            <label><strong>Filtrar por Unidade:</strong></label>
+            <label><strong>Filtrar Unidade:</strong></label>
             <select id="filtroUnidade" onchange="processar()"></select>
+            <span id="contadorAniversariantes" style="margin-left: auto; font-weight: bold; color: var(--secondary);"></span>
         </div>
-        <div style="overflow-x: auto;">
+        <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
                         <th>Unidade</th>
                         <th>Matrícula</th>
-                        <th>Nome</th>
-                        <th>Gestão</th>
-                        <th>Ação</th>
+                        <th>Colaborador</th>
+                        <th>Gestão Imediata</th>
+                        <th style="text-align: center;">Ação</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaBody"></tbody>
@@ -68,15 +72,19 @@
     </div>
 
     <div id="gerador" class="tab-content">
-        <label>Pesquisar Colaborador:</label>
-        <select id="selectColaborador" onchange="atualizarCardManualmente()" style="width: 100%; margin: 10px 0;"></select>
+        <div style="background: #fffbe6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffe58f;">
+            <strong>Pesquisar manualmente:</strong>
+            <select id="selectColaborador" onchange="atualizarCardManualmente()" style="width: 100%; margin-top: 10px;"></select>
+        </div>
         
         <div class="card">
-            <h1 style="color: var(--secondary); margin: 0;">Feliz Aniversário! 🎂</h1>
-            <h2 id="nomeCard" style="font-size: 2em; margin: 15px 0;">---</h2>
-            <p id="infoAdicional" style="color: #666; margin-bottom: 10px;">Matrícula: --- | Unidade: ---</p>
-            <p>Desejamos muito sucesso e felicidade em sua jornada!</p>
-            <p style="margin-top: 20px;">Atenciosamente, Equipe <strong><span id="gestaoCard">---</span></strong></p>
+            <h1 style="color: var(--secondary); margin: 0; font-size: 2.5em;">Feliz Aniversário! 🎂</h1>
+            <h2 id="nomeCard" style="font-size: 2.2em; margin: 20px 0; color: #222;">---</h2>
+            <p id="infoAdicional" style="color: #666; font-size: 1.1em; margin-bottom: 20px;">Matrícula: --- | Unidade: ---</p>
+            <p style="font-size: 1.2em; color: #444; max-width: 500px; margin: auto;">Desejamos que este novo ciclo seja repleto de conquistas, saúde e muita alegria!</p>
+            <div style="margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px;">
+                <p>Atenciosamente, <strong>Gestão <span id="gestaoCard">---</span></strong></p>
+            </div>
         </div>
         <div style="text-align: center;">
             <button class="btn-whats" onclick="enviarWhats()">📱 Enviar via WhatsApp Web</button>
@@ -85,21 +93,25 @@
 </div>
 
 <script>
-    const URL_PLANILHA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
+    // Link da sua planilha com um parâmetro para evitar cache antigo do navegador
+    const URL_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
+    const URL_PLANILHA = URL_BASE + '&cachebust=' + new Date().getTime();
 
     let dadosGlobal = [];
 
     async function buscarDados() {
+        const statusEl = document.getElementById('status');
         try {
             const response = await fetch(URL_PLANILHA);
-            const rawData = await response.text();
+            if (!response.ok) throw new Error('Planilha não respondeu');
+            const dataText = await response.text();
             
-            // Parse robusto para não cortar nomes (trata vírgulas dentro de aspas)
-            const linhas = rawData.split(/\r?\n/);
-            const cabecalho = splitCSV(linhas[0]);
+            // Lógica para separar CSV tratando nomes com vírgulas ou aspas
+            const linhas = dataText.split(/\r?\n/).filter(l => l.trim() !== '');
+            const cabecalho = processarLinhaCSV(linhas[0]);
 
-            dadosGlobal = linhas.slice(1).filter(l => l.trim() !== '').map(linha => {
-                const valores = splitCSV(linha);
+            dadosGlobal = linhas.slice(1).map(linha => {
+                const valores = processarLinhaCSV(linha);
                 let obj = {};
                 cabecalho.forEach((tit, i) => {
                     obj[tit.trim()] = valores[i] ? valores[i].trim() : '';
@@ -107,27 +119,43 @@
                 return obj;
             });
 
-            popularFiltroUnidade();
+            popularFiltros();
             processar();
-            document.getElementById('status').innerText = "✅ Dados Atualizados";
-            document.getElementById('status').className = "status-badge success";
+            statusEl.innerText = "✅ Conexão estabelecida com sucesso!";
+            statusEl.className = "status-badge success";
         } catch (e) {
-            document.getElementById('status').innerText = "❌ Erro ao carregar dados";
+            statusEl.innerText = "❌ ERRO: Verifique se a planilha está 'Publicada na Web' como CSV.";
+            statusEl.className = "status-badge error";
             console.error(e);
         }
     }
 
-    // Função auxiliar para não quebrar nomes com vírgulas
-    function splitCSV(string) {
-        const matches = string.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-        return matches ? matches.map(m => m.replace(/^"|"$/g, '')) : string.split(',');
+    function processarLinhaCSV(texto) {
+        // Regex para separar por vírgula mantendo o que está entre aspas junto
+        const result = [];
+        let cur = '', inQuote = false;
+        for (let char of texto) {
+            if (char === '"') inQuote = !inQuote;
+            else if (char === ',' && !inQuote) { result.push(cur); cur = ''; }
+            else cur += char;
+        }
+        result.push(cur);
+        return result;
     }
 
-    function popularFiltroUnidade() {
+    function popularFiltros() {
+        // Unidades
         const unidades = [...new Set(dadosGlobal.map(c => c.Unidade).filter(u => u))].sort();
-        const select = document.getElementById('filtroUnidade');
-        select.innerHTML = '<option value="TODAS">TODAS AS UNIDADES</option>';
-        unidades.forEach(u => select.innerHTML += `<option value="${u}">${u}</option>`);
+        const fUnidade = document.getElementById('filtroUnidade');
+        fUnidade.innerHTML = '<option value="TODAS">TODAS AS UNIDADES</option>';
+        unidades.forEach(u => fUnidade.innerHTML += `<option value="${u}">${u}</option>`);
+
+        // Select de busca
+        const selectBusca = document.getElementById('selectColaborador');
+        selectBusca.innerHTML = '<option value="">Pesquisar por nome...</option>';
+        dadosGlobal.forEach((c, i) => {
+            selectBusca.innerHTML += `<option value="${i}">${c.Nome} (${c.Unidade})</option>`;
+        });
     }
 
     function processar() {
@@ -137,38 +165,38 @@
         const unidadeFiltro = document.getElementById('filtroUnidade').value;
         
         const tbody = document.getElementById('tabelaBody');
-        const select = document.getElementById('selectColaborador');
-        
+        let count = 0;
         tbody.innerHTML = '';
-        select.innerHTML = '<option value="">Selecione um colaborador...</option>';
 
         dadosGlobal.forEach((c, i) => {
-            if(!c.Nome) return;
+            if(!c.Nome || !c['Data de Nascimento']) return;
 
-            // Tratamento de Data (DD/MM)
+            // Extrai dia e mês independente se é DD/MM ou DD/MM/AAAA
             const partes = c['Data de Nascimento'].split('/');
             const dia = parseInt(partes[0]);
             const mes = parseInt(partes[1]);
 
-            // Popular busca global
-            select.innerHTML += `<option value="${i}">${c.Nome} (${c.Unidade})</option>`;
-
-            // Filtrar aniversariantes do dia + unidade selecionada
             if(dia === diaH && mes === mesH) {
                 if(unidadeFiltro === "TODAS" || c.Unidade === unidadeFiltro) {
+                    count++;
                     tbody.innerHTML += `
                         <tr>
-                            <td>${c.Unidade}</td>
+                            <td><strong>${c.Unidade}</strong></td>
                             <td>${c.Matricula}</td>
-                            <td><strong>${c.Nome}</strong></td>
+                            <td>${c.Nome}</td>
                             <td>${c.Gestão || '---'}</td>
-                            <td><button class="btn-mini" onclick="gerarCartaoDireto(${i})">GERAR</button></td>
+                            <td style="text-align:center;">
+                                <button class="btn-mini" onclick="gerarCartaoDireto(${i})">GERAR CARTÃO</button>
+                            </td>
                         </tr>`;
                 }
             }
         });
 
-        if(!tbody.innerHTML) tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>Nenhum aniversariante nesta seleção.</td></tr>";
+        document.getElementById('contadorAniversariantes').innerText = `${count} aniversariante(s) hoje`;
+        if(count === 0) {
+            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding: 40px; color: #999;'>Nenhum aniversariante encontrado para os critérios selecionados.</td></tr>";
+        }
     }
 
     function gerarCartaoDireto(index) {
@@ -184,7 +212,7 @@
 
     function preencherCard(c) {
         document.getElementById('nomeCard').innerText = c.Nome;
-        document.getElementById('gestaoCard').innerText = c.Gestão || 'Gestão Imediata';
+        document.getElementById('gestaoCard').innerText = c.Gestão || 'Imediata';
         document.getElementById('infoAdicional').innerText = `Matrícula: ${c.Matricula} | Unidade: ${c.Unidade}`;
     }
 
@@ -197,11 +225,13 @@
 
     function enviarWhats() {
         const nome = document.getElementById('nomeCard').innerText;
-        if(nome === "---") return alert("Selecione um colaborador!");
-        const msg = encodeURIComponent(`Parabéns ${nome}! 🎉\nDesejamos um Feliz Aniversário e muito sucesso! 🎂✨`);
+        if(nome === "---") return alert("Por favor, selecione um colaborador primeiro.");
+        
+        const msg = encodeURIComponent(`Olá, ${nome}! 🎉\n\nPassando para te desejar um Feliz Aniversário! Que seu dia seja incrível e repleto de conquistas. Muita saúde e sucesso! 🎂✨`);
         window.open(`https://web.whatsapp.com/send?text=${msg}`, '_blank');
     }
 
+    // Início automático
     buscarDados();
 </script>
 </body>
