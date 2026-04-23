@@ -6,24 +6,34 @@
     <title>Portal de Aniversariantes</title>
     <style>
         :root { --primary: #25d366; --secondary: #128c7e; --light: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--light); padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--light); padding: 20px; margin: 0; }
         .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        .status-badge { padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; }
+        .loading { background: #e3f2fd; color: #1976d2; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
-        .tab-btn { padding: 12px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; }
+        .tab-btn { padding: 12px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; transition: 0.3s; }
         .tab-btn.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
+        
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
         th { background: var(--secondary); color: white; }
-        .card { border: 2px solid var(--secondary); padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0; background: #fff; }
-        .btn { background: var(--primary); color: white; padding: 12px 25px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }
+        
+        .card { border: 2px solid var(--secondary); padding: 30px; text-align: center; border-radius: 15px; margin: 20px 0; background: #fff; background-image: radial-gradient(circle at top right, #f9f9f9, #fff); }
+        .btn { background: var(--primary); color: white; padding: 15px 30px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(37, 211, 102, 0.4); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 id="status">Carregando dados da nuvem...</h2>
+    <div id="status" class="status-badge loading">Conectando à base de dados...</div>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="openTab('listagem')">Aniversariantes do Dia</button>
@@ -38,98 +48,39 @@
     </div>
 
     <div id="gerador" class="tab-content">
-        <select id="selectColaborador" onchange="atualizarCard()" style="width:100%; padding:10px; margin-bottom:15px;"></select>
+        <label>Escolha o Colaborador:</label>
+        <select id="selectColaborador" onchange="atualizarCard()" style="width:100%; padding:12px; margin: 15px 0; border-radius: 8px; border: 1px solid #ccc;"></select>
+        
         <div class="card">
-            <h1 style="color: var(--secondary);">Parabéns! 🎂</h1>
-            <h2 id="nomeCard">---</h2>
-            <p>Desejamos muito sucesso na sua caminhada!</p>
-            <p>Equipe: <strong id="gestaoCard">---</strong></p>
+            <h1 style="color: var(--secondary); margin: 0;">Feliz Aniversário! 🎂</h1>
+            <h2 id="nomeCard" style="font-size: 2em; margin: 15px 0;">---</h2>
+            <p style="font-size: 1.1em;">Desejamos muita alegria, saúde e sucesso em sua jornada!</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <p>Atenciosamente, Equipe <strong><span id="gestaoCard">---</span></strong></p>
         </div>
+        
         <div style="text-align: center;">
-            <button class="btn" onclick="enviarWhats()">📱 Enviar WhatsApp</button>
+            <button class="btn" onclick="enviarWhats()">📱 Enviar via WhatsApp Web</button>
         </div>
     </div>
 </div>
 
 <script>
-    // === COLE SEU LINK DO GOOGLE SHEETS (CSV) AQUI ABAIXO ===
+    // Link direto da sua planilha publicada como CSV
     const URL_PLANILHA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
 
     let dadosGlobal = [];
 
     async function buscarDados() {
+        const statusEl = document.getElementById('status');
         try {
             const response = await fetch(URL_PLANILHA);
-            const data = await response.text();
+            if (!response.ok) throw new Error('Falha na resposta da rede');
             
-            // Converte CSV em Objeto
-            const linhas = data.split('\n').map(linha => linha.split(','));
-            const cabecalho = linhas[0];
+            const rawData = await response.text();
             
-            dadosGlobal = linhas.slice(1).map(linha => {
-                let obj = {};
-                cabecalho.forEach((tit, i) => obj[tit.trim()] = linha[i]?.trim());
-                return obj;
-            });
+            // Lógica robusta para parse de CSV (ignora vírgulas dentro de aspas)
+            const linhas = rawData.split(/\r?\n/);
+            const cabecalho = linhas[0].split(',');
 
-            document.getElementById('status').innerText = "🎉 Portal de Aniversariantes";
-            processar();
-        } catch (e) {
-            document.getElementById('status').innerText = "❌ Erro ao conectar com a planilha";
-        }
-    }
-
-    function processar() {
-        const hoje = new Date();
-        const diaH = hoje.getDate();
-        const mesH = hoje.getMonth() + 1;
-        
-        const tbody = document.getElementById('tabelaBody');
-        const select = document.getElementById('selectColaborador');
-        
-        select.innerHTML = '<option value="">Selecione um colaborador...</option>';
-
-        dadosGlobal.forEach((c, i) => {
-            if(!c.Nome) return;
-
-            // Tratando a data no formato DD/MM/AAAA ou AAAA-MM-DD
-            const partes = c['Data de Nascimento'].split(/[-/]/);
-            let dia, mes;
-            
-            if(partes[0].length === 4) { [dia, mes] = [partes[2], partes[1]]; } // AAAA-MM-DD
-            else { [dia, mes] = [partes[0], partes[1]]; } // DD/MM/AAAA
-
-            select.innerHTML += `<option value="${i}">${c.Nome}</option>`;
-
-            if(parseInt(dia) === diaH && parseInt(mes) === mesH) {
-                tbody.innerHTML += `<tr><td><strong>${c.Nome}</strong></td><td>${c.Gestão}</td></tr>`;
-            }
-        });
-
-        if(!tbody.innerHTML) tbody.innerHTML = "<tr><td colspan='2'>Ninguém faz aniversário hoje.</td></tr>";
-    }
-
-    function openTab(id) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-    }
-
-    function atualizarCard() {
-        const c = dadosGlobal[document.getElementById('selectColaborador').value];
-        if(!c) return;
-        document.getElementById('nomeCard').innerText = c.Nome;
-        document.getElementById('gestaoCard').innerText = c.Gestão;
-    }
-
-    function enviarWhats() {
-        const nome = document.getElementById('nomeCard').innerText;
-        const msg = encodeURIComponent(`Parabéns ${nome}! 🎉 Feliz aniversário, muita saúde e sucesso! 🎂`);
-        window.open(`https://web.whatsapp.com/send?text=${msg}`, '_blank');
-    }
-
-    buscarDados();
-</script>
-</body>
-</html>
+            dadosGlobal = linhas.slice(1).filter(l => l.trim
