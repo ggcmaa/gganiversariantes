@@ -7,41 +7,39 @@
     <style>
         :root { --primary: #25d366; --secondary: #128c7e; --light: #f0f2f5; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--light); padding: 20px; margin: 0; }
-        .container { max-width: 850px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
         .status-badge { padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 0.9em; }
-        .loading { background: #e3f2fd; color: #1976d2; }
         .success { background: #e8f5e9; color: #2e7d32; }
-        .error { background: #ffebee; color: #c62828; }
+        .loading { background: #e3f2fd; color: #1976d2; }
 
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
-        .tab-btn { padding: 12px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; transition: 0.3s; }
+        .tab-btn { padding: 12px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; }
         .tab-btn.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
         
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .filters { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background: var(--secondary); color: white; font-size: 0.9em; }
+        th { background: var(--secondary); color: white; white-space: nowrap; }
+        tr:hover { background-color: #f5f5f5; }
         
-        .btn-mini { background: var(--secondary); color: white; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; }
-        .btn-mini:hover { opacity: 0.8; }
+        .btn-mini { background: var(--secondary); color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        
+        .card { border: 2px solid var(--secondary); padding: 30px; text-align: center; border-radius: 15px; margin: 20px 0; background: #fff; }
+        .btn-whats { background: var(--primary); color: white; padding: 15px 35px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: 0.3s; }
+        .btn-whats:hover { transform: scale(1.05); }
 
-        .card { border: 2px solid var(--secondary); padding: 30px; text-align: center; border-radius: 15px; margin: 20px 0; background: #fff; position: relative; overflow: hidden; }
-        .card::before { content: "🎈"; position: absolute; top: 10px; left: 10px; font-size: 2em; opacity: 0.3; }
-        .card::after { content: "🎂"; position: absolute; bottom: 10px; right: 10px; font-size: 2em; opacity: 0.3; }
-        
-        .btn-whats { background: var(--primary); color: white; padding: 15px 35px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; font-size: 1.1em; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); transition: 0.3s; }
-        .btn-whats:hover { transform: scale(1.05); background: #21bd5c; }
-        
-        select { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 1em; }
+        select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; min-width: 150px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="status" class="status-badge loading">Sincronizando com Google Sheets...</div>
+    <div id="status" class="status-badge loading">Sincronizando dados...</div>
 
     <div class="tabs">
         <button class="tab-btn active" id="btn-tab-listagem" onclick="openTab('listagem')">Aniversariantes do Dia</button>
@@ -49,29 +47,37 @@
     </div>
 
     <div id="listagem" class="tab-content active">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Gestão</th>
-                    <th style="text-align: center;">Ação</th>
-                </tr>
-            </thead>
-            <tbody id="tabelaBody"></tbody>
-        </table>
+        <div class="filters">
+            <label><strong>Filtrar por Unidade:</strong></label>
+            <select id="filtroUnidade" onchange="processar()"></select>
+        </div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Unidade</th>
+                        <th>Matrícula</th>
+                        <th>Nome</th>
+                        <th>Gestão</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaBody"></tbody>
+            </table>
+        </div>
     </div>
 
     <div id="gerador" class="tab-content">
-        <label>Selecione um colaborador da lista completa:</label>
-        <select id="selectColaborador" onchange="atualizarCardManualmente()"></select>
+        <label>Pesquisar Colaborador:</label>
+        <select id="selectColaborador" onchange="atualizarCardManualmente()" style="width: 100%; margin: 10px 0;"></select>
         
-        <div class="card" id="areaCartao">
-            <h1 style="color: var(--secondary); margin: 0;">Feliz Aniversário!</h1>
-            <h2 id="nomeCard" style="font-size: 2.2em; margin: 15px 0; color: #333;">---</h2>
-            <p style="font-size: 1.2em; color: #555;">Desejamos a você um dia maravilhoso e um ciclo repleto de novas conquistas!</p>
-            <p style="margin-top: 25px; color: #888; font-style: italic;">Atenciosamente, Equipe <span id="gestaoCard">---</span></p>
+        <div class="card">
+            <h1 style="color: var(--secondary); margin: 0;">Feliz Aniversário! 🎂</h1>
+            <h2 id="nomeCard" style="font-size: 2em; margin: 15px 0;">---</h2>
+            <p id="infoAdicional" style="color: #666; margin-bottom: 10px;">Matrícula: --- | Unidade: ---</p>
+            <p>Desejamos muito sucesso e felicidade em sua jornada!</p>
+            <p style="margin-top: 20px;">Atenciosamente, Equipe <strong><span id="gestaoCard">---</span></strong></p>
         </div>
-        
         <div style="text-align: center;">
             <button class="btn-whats" onclick="enviarWhats()">📱 Enviar via WhatsApp Web</button>
         </div>
@@ -87,113 +93,112 @@
         try {
             const response = await fetch(URL_PLANILHA);
             const rawData = await response.text();
+            
+            // Parse robusto para não cortar nomes (trata vírgulas dentro de aspas)
             const linhas = rawData.split(/\r?\n/);
-            const cabecalho = linhas[0].split(',');
+            const cabecalho = splitCSV(linhas[0]);
 
             dadosGlobal = linhas.slice(1).filter(l => l.trim() !== '').map(linha => {
-                const valores = linha.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || linha.split(',');
+                const valores = splitCSV(linha);
                 let obj = {};
                 cabecalho.forEach((tit, i) => {
-                    let val = valores[i] ? valores[i].replace(/"/g, '').trim() : '';
-                    obj[tit.trim()] = val;
+                    obj[tit.trim()] = valores[i] ? valores[i].trim() : '';
                 });
                 return obj;
             });
 
+            popularFiltroUnidade();
+            processar();
             document.getElementById('status').innerText = "✅ Dados Atualizados";
             document.getElementById('status').className = "status-badge success";
-            processar();
         } catch (e) {
-            document.getElementById('status').innerText = "❌ Erro ao acessar planilha pública.";
-            document.getElementById('status').className = "status-badge error";
+            document.getElementById('status').innerText = "❌ Erro ao carregar dados";
+            console.error(e);
         }
+    }
+
+    // Função auxiliar para não quebrar nomes com vírgulas
+    function splitCSV(string) {
+        const matches = string.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        return matches ? matches.map(m => m.replace(/^"|"$/g, '')) : string.split(',');
+    }
+
+    function popularFiltroUnidade() {
+        const unidades = [...new Set(dadosGlobal.map(c => c.Unidade).filter(u => u))].sort();
+        const select = document.getElementById('filtroUnidade');
+        select.innerHTML = '<option value="TODAS">TODAS AS UNIDADES</option>';
+        unidades.forEach(u => select.innerHTML += `<option value="${u}">${u}</option>`);
     }
 
     function processar() {
         const hoje = new Date();
         const diaH = hoje.getDate();
         const mesH = hoje.getMonth() + 1;
+        const unidadeFiltro = document.getElementById('filtroUnidade').value;
         
         const tbody = document.getElementById('tabelaBody');
         const select = document.getElementById('selectColaborador');
         
         tbody.innerHTML = '';
-        select.innerHTML = '<option value="">Pesquisar colaborador...</option>';
+        select.innerHTML = '<option value="">Selecione um colaborador...</option>';
 
         dadosGlobal.forEach((c, i) => {
-            if(!c.Nome || !c['Data de Nascimento']) return;
+            if(!c.Nome) return;
 
-            // Tratamento de Data
-            const partes = c['Data de Nascimento'].split(/[-/]/);
-            let dia, mes;
-            if(partes[0].length === 4) { [dia, mes] = [partes[2], partes[1]]; }
-            else { [dia, mes] = [partes[0], partes[1]]; }
+            // Tratamento de Data (DD/MM)
+            const partes = c['Data de Nascimento'].split('/');
+            const dia = parseInt(partes[0]);
+            const mes = parseInt(partes[1]);
 
-            // Adiciona ao Select Global
-            let opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = c.Nome;
-            select.appendChild(opt);
+            // Popular busca global
+            select.innerHTML += `<option value="${i}">${c.Nome} (${c.Unidade})</option>`;
 
-            // Se for hoje, adiciona na tabela com botão de ação
-            if(parseInt(dia) === diaH && parseInt(mes) === mesH) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${c.Nome}</strong></td>
-                    <td>${c.Gestão || 'Geral'}</td>
-                    <td style="text-align: center;">
-                        <button class="btn-mini" onclick="gerarCartaoDireto(${i})">GERAR CARTÃO</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+            // Filtrar aniversariantes do dia + unidade selecionada
+            if(dia === diaH && mes === mesH) {
+                if(unidadeFiltro === "TODAS" || c.Unidade === unidadeFiltro) {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${c.Unidade}</td>
+                            <td>${c.Matricula}</td>
+                            <td><strong>${c.Nome}</strong></td>
+                            <td>${c.Gestão || '---'}</td>
+                            <td><button class="btn-mini" onclick="gerarCartaoDireto(${i})">GERAR</button></td>
+                        </tr>`;
+                }
             }
         });
 
-        if(tbody.innerHTML === '') {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999; padding:30px;">Nenhum aniversariante encontrado para hoje.</td></tr>';
-        }
+        if(!tbody.innerHTML) tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>Nenhum aniversariante nesta seleção.</td></tr>";
     }
 
-    // Função que o botão da tabela chama
     function gerarCartaoDireto(index) {
-        const colab = dadosGlobal[index];
-        // Preenche os dados no cartão
-        document.getElementById('nomeCard').innerText = colab.Nome;
-        document.getElementById('gestaoCard').innerText = colab.Gestão || 'Gestão Imediata';
+        preencherCard(dadosGlobal[index]);
         document.getElementById('selectColaborador').value = index;
-
-        // Muda para a aba do gerador
         openTab('gerador');
-        
-        // Pequeno efeito visual de foco no cartão
-        const cartao = document.getElementById('areaCartao');
-        cartao.style.borderColor = "#25d366";
-        setTimeout(() => cartao.style.borderColor = "#128c7e", 1000);
     }
 
     function atualizarCardManualmente() {
         const idx = document.getElementById('selectColaborador').value;
-        if(idx !== "") {
-            const c = dadosGlobal[idx];
-            document.getElementById('nomeCard').innerText = c.Nome;
-            document.getElementById('gestaoCard').innerText = c.Gestão || 'Gestão Imediata';
-        }
+        if(idx) preencherCard(dadosGlobal[idx]);
+    }
+
+    function preencherCard(c) {
+        document.getElementById('nomeCard').innerText = c.Nome;
+        document.getElementById('gestaoCard').innerText = c.Gestão || 'Gestão Imediata';
+        document.getElementById('infoAdicional').innerText = `Matrícula: ${c.Matricula} | Unidade: ${c.Unidade}`;
     }
 
     function openTab(id) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        
         document.getElementById(id).classList.add('active');
-        if(id === 'listagem') document.getElementById('btn-tab-listagem').classList.add('active');
-        if(id === 'gerador') document.getElementById('btn-tab-gerador').classList.add('active');
+        document.getElementById('btn-tab-' + id).classList.add('active');
     }
 
     function enviarWhats() {
         const nome = document.getElementById('nomeCard').innerText;
-        if(nome === "---") return alert("Selecione alguém ou clique em 'Gerar Cartão' na lista.");
-        
-        const msg = encodeURIComponent(`Olá, ${nome}! 🎉\n\nParabéns pelo seu dia! Desejamos muita saúde, felicidade e sucesso nesse novo ciclo que se inicia. 🎂✨`);
+        if(nome === "---") return alert("Selecione um colaborador!");
+        const msg = encodeURIComponent(`Parabéns ${nome}! 🎉\nDesejamos um Feliz Aniversário e muito sucesso! 🎂✨`);
         window.open(`https://web.whatsapp.com/send?text=${msg}`, '_blank');
     }
 
