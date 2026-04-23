@@ -8,223 +8,227 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root { 
-            --cmaa-verde: #006838; /* Verde institucional extraído do logo */
-            --cmaa-claro: #f0f4f1;
-            --whatsapp: #25d366;
+            --cmaa-verde-deep: #004d2c; 
+            --cmaa-verde-light: #006838;
+            --gold: #d4af37;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--cmaa-claro); margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         
-        /* Abas */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
-        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; font-size: 1em; }
-        .tab-btn.active { color: var(--cmaa-verde); border-bottom: 3px solid var(--cmaa-verde); }
+        /* Menu de Abas */
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 25px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; }
+        .tab-btn.active { color: var(--cmaa-verde-light); border-bottom: 3px solid var(--cmaa-verde-light); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Tabela */
-        .filters { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; background: #e8ede9; padding: 15px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: var(--cmaa-verde); color: white; padding: 12px; text-align: left; text-transform: uppercase; font-size: 0.8em; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-        .btn-acao { background: var(--cmaa-verde); color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        /* Tabela e Filtros */
+        .filters { background: #eef2ef; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th { background: var(--cmaa-verde-light); color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        .btn-gen { background: var(--cmaa-verde-light); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
 
-        /* Estilo do Cartão para o PDF */
-        #cartao-export {
-            width: 600px;
-            height: 800px;
+        /* PREVIEW DO CARTÃO (LAYOUT FIEL À IMAGEM) */
+        #cartao-pdf-area {
+            width: 595px; /* Tamanho A4 proporcional */
+            height: 842px;
+            background: linear-gradient(135deg, var(--cmaa-verde-deep) 0%, var(--cmaa-verde-light) 100%);
+            color: white;
+            position: relative;
             padding: 40px;
-            background: white;
-            border: 15px solid var(--cmaa-verde);
-            margin: 20px auto;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            position: relative;
-            box-sizing: border-box;
+            overflow: hidden;
+            margin: 0 auto;
         }
-        .logo-cartao { width: 180px; margin-bottom: 40px; }
-        .nome-aniversariante { font-size: 2.5em; color: #333; margin: 0; font-weight: bold; text-transform: uppercase; }
-        .titulo-parabens { font-size: 4em; color: var(--cmaa-verde); margin: 10px 0; font-family: 'Georgia', serif; }
-        .texto-mensagem { font-size: 1.4em; color: #555; line-height: 1.5; margin: 20px 40px; }
-        .footer-cartao { margin-top: 50px; font-size: 1.2em; color: var(--cmaa-verde); font-weight: bold; }
 
-        /* Botões */
-        .area-botoes { text-align: center; margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
-        .btn-pdf { background: #d32f2f; color: white; padding: 15px 30px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1.1em; }
-        .btn-whatsapp { background: var(--whatsapp); color: white; padding: 15px 30px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1.1em; text-decoration: none; }
+        .decoracao { position: absolute; font-size: 50px; opacity: 0.8; }
+        .bolo { top: 40px; left: 40px; font-size: 80px; }
+        .confete-top { top: 20px; right: 40px; }
+        .confete-bottom { bottom: 40px; left: 40px; }
+
+        .header-texto { font-size: 32px; font-weight: bold; letter-spacing: 2px; margin-top: 100px; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px; text-transform: uppercase; }
         
-        select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        .nome-container { width: 100%; text-align: center; margin-top: 60px; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+        .nome-colaborador { font-size: 42px; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); line-height: 1.1; }
+
+        .parabens-texto { font-size: 72px; font-family: 'Georgia', serif; font-style: italic; margin: 20px 0; color: white; }
+        
+        .mensagem-corpo { font-size: 18px; line-height: 1.6; text-align: center; max-width: 80%; margin: 30px auto; font-weight: 300; }
+        
+        .logo-cmaa { position: absolute; bottom: 60px; width: 220px; filter: brightness(0) invert(1); }
+        .tagline { position: absolute; bottom: 40px; font-size: 14px; letter-spacing: 1px; opacity: 0.9; }
+
+        .controls { text-align: center; margin-top: 20px; padding-bottom: 40px; }
+        .btn-download { background: #c0392b; color: white; padding: 15px 40px; border: none; border-radius: 50px; font-size: 1.2em; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <h2 style="color: var(--cmaa-verde); margin: 0;">🎉 Portal de Aniversariantes</h2>
-        <img src="https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png" alt="CMAA" style="height: 50px;">
-    </div>
+    <div id="status-msg" style="text-align:center; padding:10px; margin-bottom:10px; border-radius:5px; display:none;"></div>
 
     <div class="tabs">
-        <button class="tab-btn active" id="btn-tab-listagem" onclick="openTab('listagem')">Aniversariantes do Dia</button>
-        <button class="tab-btn" id="btn-tab-gerador" onclick="openTab('gerador')">Gerador de Cartão PDF</button>
+        <div class="tab-btn active" onclick="openTab(event, 'aba-lista')">Aniversariantes do Dia</div>
+        <div class="tab-btn" onclick="openTab(event, 'aba-cartao')">Gerador de PDF</div>
     </div>
 
-    <div id="listagem" class="tab-content active">
+    <div id="aba-lista" class="tab-content active">
         <div class="filters">
-            <label><strong>Unidade:</strong></label>
-            <select id="filtroUnidade" onchange="processar()"></select>
+            <strong>Unidade:</strong>
+            <select id="filtroUnidade" onchange="atualizarTabela()"></select>
         </div>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Unidade</th>
-                        <th>Matrícula</th>
-                        <th>Colaborador</th>
-                        <th>Gestão</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaBody"></tbody>
-            </table>
-        </div>
+        <table id="tabelaAniversariantes">
+            <thead>
+                <tr>
+                    <th>Unidade</th>
+                    <th>Matrícula</th>
+                    <th>Nome</th>
+                    <th>Gestão</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 
-    <div id="gerador" class="tab-content">
-        <div style="margin-bottom: 20px; text-align: center;">
-            <label>Selecione manualmente:</label>
-            <select id="selectColaborador" onchange="atualizarCard()" style="width: 300px;"></select>
-        </div>
-
-        <div id="cartao-export">
-            <img src="https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png" class="logo-cartao">
-            <p class="nome-aniversariante" id="pdfNome">NOME DO COLABORADOR</p>
-            <h1 class="titulo-parabens">Parabéns!!</h1>
-            <p class="texto-mensagem">
-                Desejamos que o seu dia seja repleto de sorrisos, 
-                rodeado de pessoas queridas e que este novo ciclo 
-                seja de muita energia, saúde e grandes realizações!
-            </p>
-            <div class="footer-cartao">
-                EQUIPE <span id="pdfGestao">GESTÃO</span>
+    <div id="aba-cartao" class="tab-content">
+        <div id="cartao-pdf-area">
+            <div class="decoracao bolo">🎂</div>
+            <div class="decoracao confete-top">🥳</div>
+            <div class="decoracao confete-bottom">🎉</div>
+            
+            <div class="header-texto">Feliz Aniversário</div>
+            
+            <div class="nome-container">
+                <div class="nome-colaborador" id="displayNome">NOME DO COLABORADOR</div>
             </div>
+
+            <div class="parabens-texto">Parabéns!!</div>
+
+            <p class="mensagem-corpo">
+                Já reparou que a nossa energia muda quando celebramos mais um ano de vida? 
+                É porque ela é o que a gente tem de melhor. E aqui a sua energia é mais que um conceito, 
+                é a força que nos move e transforma o nosso mundo todos os dias.
+                <br><br>
+                Por isso, não podemos deixar de desejar um feliz aniversário e compartilhar o nosso abraço!
+            </p>
+
+            <img src="https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png" class="logo-cmaa">
+            <div class="tagline">Energia que transforma</div>
         </div>
 
-        <div class="area-botoes">
-            <button class="btn-pdf" onclick="baixarPDF()">📄 Baixar Cartão em PDF</button>
-            <button class="btn-whatsapp" onclick="enviarWhats()">📱 Enviar no WhatsApp</button>
+        <div class="controls">
+            <button class="btn-download" onclick="exportarPDF()">⬇️ BAIXAR CARTÃO PDF</button>
         </div>
     </div>
 </div>
 
 <script>
-    const URL_PLANILHA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv&cache=' + new Date().getTime();
+    const URL_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
+    let dadosBrutos = [];
 
-    let dadosGlobal = [];
-
-    async function buscarDados() {
+    async function carregarDados() {
         try {
-            const response = await fetch(URL_PLANILHA);
-            const dataText = await response.text();
-            const linhas = dataText.split(/\r?\n/).filter(l => l.trim() !== '');
+            const resp = await fetch(URL_CSV);
+            const csv = await resp.text();
+            const linhas = csv.split(/\r?\n/).filter(l => l.trim() !== '');
             const cabecalho = linhas[0].split(',');
 
-            dadosGlobal = linhas.slice(1).map(linha => {
-                const valores = linha.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || linha.split(',');
+            dadosBrutos = linhas.slice(1).map(linha => {
+                const colunas = linha.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || linha.split(',');
                 let obj = {};
-                cabecalho.forEach((tit, i) => {
-                    let val = valores[i] ? valores[i].replace(/"/g, '').trim() : '';
-                    obj[tit.trim()] = val;
+                cabecalho.forEach((label, i) => {
+                    obj[label.trim()] = colunas[i] ? colunas[i].replace(/"/g, '').trim() : '';
                 });
                 return obj;
             });
 
-            popularFiltros();
-            processar();
-        } catch (e) { console.error("Erro ao carregar:", e); }
+            // Popular Unidades
+            const unidades = [...new Set(dadosBrutos.map(d => d.Unidade))].sort();
+            const select = document.getElementById('filtroUnidade');
+            select.innerHTML = '<option value="TODAS">TODAS AS UNIDADES</option>';
+            unidades.forEach(u => select.innerHTML += `<option value="${u}">${u}</option>`);
+
+            atualizarTabela();
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao ler a planilha. Verifique se ela está pública.");
+        }
     }
 
-    function popularFiltros() {
-        const unidades = [...new Set(dadosGlobal.map(c => c.Unidade).filter(u => u))].sort();
-        document.getElementById('filtroUnidade').innerHTML = '<option value="TODAS">TODAS</option>' + 
-            unidades.map(u => `<option value="${u}">${u}</option>`).join('');
-
-        document.getElementById('selectColaborador').innerHTML = '<option value="">Pesquisar...</option>' + 
-            dadosGlobal.map((c, i) => `<option value="${i}">${c.Nome}</option>`).join('');
-    }
-
-    function processar() {
+    function atualizarTabela() {
         const hoje = new Date();
         const diaH = hoje.getDate();
         const mesH = hoje.getMonth() + 1;
-        const unidade = document.getElementById('filtroUnidade').value;
-        const tbody = document.getElementById('tabelaBody');
+        const filtro = document.getElementById('filtroUnidade').value;
+        const tbody = document.querySelector('#tabelaAniversariantes tbody');
+        
         tbody.innerHTML = '';
-
-        dadosGlobal.forEach((c, i) => {
+        
+        dadosBrutos.forEach((c, index) => {
+            if(!c['Data de Nascimento']) return;
             const partes = c['Data de Nascimento'].split('/');
-            if(parseInt(partes[0]) === diaH && parseInt(partes[1]) === mesH) {
-                if(unidade === "TODAS" || c.Unidade === unidade) {
-                    tbody.innerHTML += `<tr>
+            const diaC = parseInt(partes[0]);
+            const mesC = parseInt(partes[1]);
+
+            if(diaC === diaH && mesC === mesH) {
+                if(filtro === "TODAS" || c.Unidade === filtro) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
                         <td>${c.Unidade}</td>
                         <td>${c.Matricula}</td>
                         <td><strong>${c.Nome}</strong></td>
                         <td>${c.Gestão}</td>
-                        <td><button class="btn-acao" onclick="gerarIndividual(${i})">GERAR PDF</button></td>
-                    </tr>`;
+                        <td><button class="btn-gen" onclick="prepararCartao(${index})">GERAR PDF</button></td>
+                    `;
+                    tbody.appendChild(tr);
                 }
             }
         });
     }
 
-    function gerarIndividual(i) {
-        atualizarCard(i);
-        openTab('gerador');
+    function prepararCartao(index) {
+        const colab = dadosBrutos[index];
+        const display = document.getElementById('displayNome');
+        display.innerText = colab.Nome.toUpperCase();
+
+        // Ajuste dinâmico de fonte para nomes longos
+        if(colab.Nome.length > 25) display.style.fontSize = "30px";
+        else if(colab.Nome.length > 35) display.style.fontSize = "24px";
+        else display.style.fontSize = "42px";
+
+        openTab(null, 'aba-cartao');
     }
 
-    function atualizarCard(index) {
-        const i = index !== undefined ? index : document.getElementById('selectColaborador').value;
-        if(i === "") return;
-        const c = dadosGlobal[i];
-        document.getElementById('pdfNome').innerText = c.Nome;
-        document.getElementById('pdfGestao').innerText = (c.Gestão || 'CMAA').toUpperCase();
-    }
-
-    function baixarPDF() {
+    function exportarPDF() {
         const { jsPDF } = window.jspdf;
-        const elemento = document.getElementById('cartao-export');
-        const nome = document.getElementById('pdfNome').innerText;
+        const area = document.getElementById('cartao-pdf-area');
+        const nome = document.getElementById('displayNome').innerText;
 
-        html2canvas(elemento, { scale: 2 }).then(canvas => {
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        html2canvas(area, { scale: 3, useCORS: true }).then(canvas => {
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            const width = pdf.internal.pageSize.getWidth();
+            const height = pdf.internal.pageSize.getHeight();
             
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
             pdf.save(`Cartao_CMAA_${nome}.pdf`);
         });
     }
 
-    function openTab(id) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    function openTab(evt, tabId) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.getElementById('btn-tab-' + id).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        if(evt) evt.currentTarget.classList.add('active');
+        else document.querySelectorAll('.tab-btn')[1].classList.add('active');
     }
 
-    function enviarWhats() {
-        const nome = document.getElementById('pdfNome').innerText;
-        const msg = encodeURIComponent(`Olá, ${nome}! 🎉\n\nA CMAA deseja a você um Feliz Aniversário! Seu cartão oficial foi gerado. 🎂✨`);
-        window.open(`https://web.whatsapp.com/send?text=${msg}`, '_blank');
-    }
-
-    buscarDados();
+    carregarDados();
 </script>
-
 </body>
 </html>
