@@ -11,53 +11,44 @@
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
-        .tabs { display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid #eee; }
-        .tab-btn { padding: 15px 30px; cursor: pointer; border: none; background: none; font-weight: bold; color: #888; font-size: 1.1em; }
-        .tab-btn.active { color: var(--cmaa-verde); border-bottom: 4px solid var(--cmaa-verde); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--cmaa-verde); padding-bottom: 10px; }
+        .logo-img { height: 60px; }
+
+        .tabs { display: flex; gap: 15px; margin-bottom: 25px; }
+        .tab-btn { padding: 12px 25px; cursor: pointer; border: none; background: #eee; border-radius: 8px; font-weight: bold; color: #666; }
+        .tab-btn.active { background: var(--cmaa-verde); color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Tabela */
-        .filters { background: #f8faf9; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e1e8e3; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: var(--cmaa-verde); color: white; padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.85em; }
-        td { padding: 15px; border-bottom: 1px solid #eee; color: #444; }
-        .btn-gerar { background: var(--cmaa-verde); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-gerar:hover { background: var(--cmaa-escuro); transform: scale(1.05); }
+        .filters { background: #f8faf9; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e1e8e3; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: var(--cmaa-verde); color: white; padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+        .btn-gerar { background: var(--cmaa-verde); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-        /* CARTÃO PDF - DESIGN FIEL À IMAGEM */
+        /* CARTÃO PDF */
         #cartao-area {
-            width: 595px; height: 842px; /* Proporção A4 */
+            width: 595px; height: 842px;
             background: linear-gradient(135deg, var(--cmaa-escuro) 0%, var(--cmaa-verde) 100%);
             color: white; padding: 50px; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center; text-align: center;
-            position: relative; overflow: hidden; margin: 0 auto;
+            position: relative; margin: 0 auto;
         }
-
-        /* Elementos Decorativos */
-        .decor { position: absolute; font-size: 60px; opacity: 0.7; }
-        .decor.bolo { top: 40px; left: 40px; }
-        .decor.festa { top: 30px; right: 50px; }
-        .decor.confete { bottom: 150px; right: 40px; }
-
-        .txt-topo { font-size: 28px; font-weight: bold; letter-spacing: 3px; margin-top: 80px; text-transform: uppercase; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
-        
-        .nome-container { height: 120px; display: flex; align-items: center; justify-content: center; margin-top: 40px; width: 100%; }
-        #pdfNome { font-size: 42px; font-weight: bold; line-height: 1.1; word-wrap: break-word; max-width: 90%; }
-
-        .txt-parabens { font-size: 85px; font-family: 'Georgia', serif; font-style: italic; margin: 10px 0; }
-        
-        .txt-mensagem { font-size: 19px; line-height: 1.6; font-weight: 300; margin: 20px 20px; text-align: center; }
-
-        .logo-cmaa { position: absolute; bottom: 70px; width: 220px; filter: brightness(0) invert(1); }
-        .tagline { position: absolute; bottom: 45px; font-size: 15px; letter-spacing: 1.5px; opacity: 0.8; }
-
-        .btn-download { background: #d32f2f; color: white; padding: 20px 50px; border: none; border-radius: 50px; font-size: 1.3em; font-weight: bold; cursor: pointer; display: block; margin: 30px auto; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .txt-topo { font-size: 30px; font-weight: bold; margin-top: 60px; text-transform: uppercase; }
+        #pdfNome { font-size: 38px; font-weight: bold; margin: 40px 0; min-height: 100px; display: flex; align-items: center; }
+        .txt-parabens { font-size: 80px; font-family: serif; font-style: italic; margin-bottom: 20px; }
+        .txt-msg { font-size: 18px; line-height: 1.6; padding: 0 20px; }
+        .logo-footer { position: absolute; bottom: 60px; width: 220px; filter: brightness(0) invert(1); }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div class="header-top">
+        <h2 style="color: var(--cmaa-verde); margin: 0;">Portal de Aniversariantes</h2>
+        <img src="https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png" class="logo-img" alt="CMAA">
+    </div>
+
     <div class="tabs">
         <button class="tab-btn active" onclick="mudarAba('aba-lista')">Aniversariantes do Dia</button>
         <button class="tab-btn" onclick="mudarAba('aba-cartao')">Visualizar Cartão</button>
@@ -65,125 +56,97 @@
 
     <div id="aba-lista" class="tab-content active">
         <div class="filters">
-            <strong>Filtrar Unidade:</strong>
-            <select id="filtroUnidade" onchange="renderizarTabela()" style="padding: 8px; border-radius: 5px; margin-left: 10px;"></select>
+            <strong>Unidade:</strong>
+            <select id="filtroUnidade" onchange="renderizarTabela()" style="padding: 8px; margin-left: 10px;"></select>
         </div>
-        <table id="minhaTabela">
+        <table>
             <thead>
                 <tr>
                     <th>Unidade</th>
                     <th>Matrícula</th>
                     <th>Colaborador</th>
                     <th>Gestão</th>
-                    <th style="text-align:center">Ação</th>
+                    <th>Ação</th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody id="corpoTabela"></tbody>
         </table>
     </div>
 
     <div id="aba-cartao" class="tab-content">
         <div id="cartao-area">
-            <div class="decor bolo">🎂</div>
-            <div class="decor festa">🥳</div>
-            <div class="decor confete">🎉</div>
-
             <div class="txt-topo">Feliz Aniversário</div>
-            
-            <div class="nome-container">
-                <div id="pdfNome">NOME DO COLABORADOR</div>
-            </div>
-
+            <div id="pdfNome">NOME DO COLABORADOR</div>
             <div class="txt-parabens">Parabéns!!</div>
-
-            <p class="txt-mensagem">
+            <p class="txt-msg">
                 Já reparou que a nossa energia muda quando celebramos mais um ano de vida? 
                 É porque ela é o que a gente tem de melhor. E aqui a sua energia é mais que um conceito, 
                 é a força que nos move e transforma o nosso mundo todos os dias.
-                <br><br>
-                Por isso, não podemos deixar de desejar um feliz aniversário e compartilhar o nosso abraço!
             </p>
-
-            <img src="https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png" class="logo-cmaa">
-            <div class="tagline">Energia que transforma</div>
+            <img src="https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png" class="logo-footer">
         </div>
-
-        <button class="btn-download" onclick="baixarPDF()">⬇️ BAIXAR CARTÃO PDF</button>
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="baixarPDF()" style="padding: 15px 40px; background: #d32f2f; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer;">⬇️ BAIXAR PDF</button>
+        </div>
     </div>
 </div>
 
 <script>
-    const LINK_PLANILHA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
     let database = [];
 
-    async function carregarDados() {
+    async function carregarPlanilha() {
         try {
-            const r = await fetch(LINK_PLANILHA + "&cache=" + Date.now());
-            const texto = await r.text();
+            const resp = await fetch(SHEET_URL + "&cache=" + Date.now());
+            const csv = await resp.text();
+            const linhas = csv.split(/\r?\n/).filter(l => l.trim() !== "");
             
-            // Tratamento especial para não cortar nomes (Regex para CSV)
-            const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
-            const header = parsearLinha(linhas[0]);
+            // Lógica robusta para ler as colunas corretamente
+            const cabecalho = linhas[0].split(',').map(c => c.trim());
 
             database = linhas.slice(1).map(linha => {
-                const vals = parsearLinha(linha);
-                let item = {};
-                header.forEach((h, i) => item[h.trim()] = vals[i] ? vals[i].trim() : "");
-                return item;
+                const colunas = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Regex para não quebrar nomes com vírgulas
+                let obj = {};
+                cabecalho.forEach((h, i) => {
+                    obj[h] = colunas[i] ? colunas[i].replace(/"/g, '').trim() : "";
+                });
+                return obj;
             });
 
-            // Setup filtros e tabela
             const unidades = [...new Set(database.map(d => d.Unidade))].sort();
             const sel = document.getElementById('filtroUnidade');
-            sel.innerHTML = '<option value="TODAS">TODAS AS UNIDADES</option>';
-            unidades.forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
+            sel.innerHTML = '<option value="TODAS">TODAS</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
 
             renderizarTabela();
-        } catch (e) { alert("Erro ao carregar dados. Verifique a internet."); }
-    }
-
-    // Função que garante que nomes com vírgulas ou aspas não sejam cortados
-    function parsearLinha(linha) {
-        const pattern = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
-        const matches = linha.match(pattern);
-        return matches ? matches.map(m => m.replace(/^"|"$/g, '')) : linha.split(',');
+        } catch (e) { console.error("Erro ao carregar nomes:", e); }
     }
 
     function renderizarTabela() {
         const hoje = new Date();
-        const dH = hoje.getDate();
-        const mH = hoje.getMonth() + 1;
+        const diaH = hoje.getDate();
+        const mesH = hoje.getMonth() + 1;
         const filtro = document.getElementById('filtroUnidade').value;
-        const tbody = document.querySelector("#minhaTabela tbody");
+        const tbody = document.getElementById('corpoTabela');
         tbody.innerHTML = "";
 
         database.forEach((c, idx) => {
-            if(!c['Data de Nascimento']) return;
-            const partes = c['Data de Nascimento'].split('/');
-            if(parseInt(partes[0]) === dH && parseInt(partes[1]) === mH) {
+            const partesData = c['Data de Nascimento'].split('/');
+            if(parseInt(partesData[0]) === diaH && parseInt(partesData[1]) === mesH) {
                 if(filtro === "TODAS" || c.Unidade === filtro) {
                     tbody.innerHTML += `<tr>
                         <td>${c.Unidade}</td>
                         <td>${c.Matricula}</td>
-                        <td style="font-weight:bold">${c.Nome}</td>
+                        <td><strong>${c.Nome}</strong></td>
                         <td>${c.Gestão}</td>
-                        <td style="text-align:center"><button class="btn-gerar" onclick="irParaCartao(${idx})">GERAR PDF</button></td>
+                        <td><button class="btn-gerar" onclick="prepararPDF(${idx})">GERAR PDF</button></td>
                     </tr>`;
                 }
             }
         });
     }
 
-    function irParaCartao(i) {
-        const colab = database[i];
-        const elNome = document.getElementById('pdfNome');
-        elNome.innerText = colab.Nome.toUpperCase();
-        
-        // Ajuste de fonte para nomes gigantes
-        if(colab.Nome.length > 30) elNome.style.fontSize = "28px";
-        else if(colab.Nome.length > 20) elNome.style.fontSize = "35px";
-        else elNome.style.fontSize = "42px";
-
+    function prepararPDF(i) {
+        document.getElementById('pdfNome').innerText = database[i].Nome.toUpperCase();
         mudarAba('aba-cartao');
     }
 
@@ -191,25 +154,18 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        // Adiciona classe active no botão correspondente
-        if(id === 'aba-lista') document.querySelectorAll('.tab-btn')[0].classList.add('active');
-        else document.querySelectorAll('.tab-btn')[1].classList.add('active');
     }
 
     function baixarPDF() {
-        const { jsPDF } = window.jspdf;
         const area = document.getElementById('cartao-area');
-        const nome = document.getElementById('pdfNome').innerText;
-
-        html2canvas(area, { scale: 3, useCORS: true }).then(canvas => {
-            const img = canvas.toDataURL('image/jpeg', 0.95);
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            pdf.addImage(img, 'JPEG', 0, 0, 210, 297);
-            pdf.save(`Cartao_CMAA_${nome}.pdf`);
+        html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
+            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG', 0, 0, 210, 297);
+            pdf.save("Cartao_Aniversario_CMAA.pdf");
         });
     }
 
-    carregarDados();
+    carregarPlanilha();
 </script>
 </body>
 </html>
