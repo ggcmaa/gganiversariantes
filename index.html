@@ -12,7 +12,9 @@
         .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--cmaa-verde); padding-bottom: 10px; }
-        .logo-img { height: 60px; }
+        
+        /* O Logo novo será injetado aqui via JS para garantir que carregue */
+        .logo-placeholder { height: 60px; }
 
         .tabs { display: flex; gap: 15px; margin-bottom: 25px; }
         .tab-btn { padding: 12px 25px; cursor: pointer; border: none; background: #eee; border-radius: 8px; font-weight: bold; color: #666; }
@@ -20,13 +22,12 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        .filters { background: #f8faf9; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e1e8e3; }
-        table { width: 100%; border-collapse: collapse; background: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background: var(--cmaa-verde); color: white; padding: 15px; text-align: left; }
         td { padding: 15px; border-bottom: 1px solid #eee; }
         .btn-gerar { background: var(--cmaa-verde); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-        /* CARTÃO PDF */
+        /* DESIGN DO CARTÃO VERDE */
         #cartao-area {
             width: 595px; height: 842px;
             background: linear-gradient(135deg, var(--cmaa-escuro) 0%, var(--cmaa-verde) 100%);
@@ -34,11 +35,12 @@
             display: flex; flex-direction: column; align-items: center; text-align: center;
             position: relative; margin: 0 auto;
         }
-        .txt-topo { font-size: 30px; font-weight: bold; margin-top: 60px; text-transform: uppercase; }
-        #pdfNome { font-size: 38px; font-weight: bold; margin: 40px 0; min-height: 100px; display: flex; align-items: center; }
+        .decor { position: absolute; font-size: 50px; opacity: 0.6; }
+        .txt-topo { font-size: 28px; font-weight: bold; margin-top: 80px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.3); }
+        #pdfNome { font-size: 40px; font-weight: bold; margin: 40px 0; color: #fff; min-height: 80px; }
         .txt-parabens { font-size: 80px; font-family: serif; font-style: italic; margin-bottom: 20px; }
-        .txt-msg { font-size: 18px; line-height: 1.6; padding: 0 20px; }
-        .logo-footer { position: absolute; bottom: 60px; width: 220px; filter: brightness(0) invert(1); }
+        .txt-msg { font-size: 18px; line-height: 1.6; padding: 0 30px; font-weight: 300; }
+        .logo-pdf { position: absolute; bottom: 60px; width: 250px; filter: brightness(0) invert(1); }
     </style>
 </head>
 <body>
@@ -46,7 +48,7 @@
 <div class="container">
     <div class="header-top">
         <h2 style="color: var(--cmaa-verde); margin: 0;">Portal de Aniversariantes</h2>
-        <img src="https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png" class="logo-img" alt="CMAA">
+        <div id="logo-container-site"></div>
     </div>
 
     <div class="tabs">
@@ -55,26 +57,23 @@
     </div>
 
     <div id="aba-lista" class="tab-content active">
-        <div class="filters">
-            <strong>Unidade:</strong>
-            <select id="filtroUnidade" onchange="renderizarTabela()" style="padding: 8px; margin-left: 10px;"></select>
-        </div>
         <table>
             <thead>
                 <tr>
                     <th>Unidade</th>
                     <th>Matrícula</th>
                     <th>Colaborador</th>
-                    <th>Gestão</th>
                     <th>Ação</th>
                 </tr>
             </thead>
-            <tbody id="corpoTabela"></tbody>
+            <tbody id="tabelaDados"></tbody>
         </table>
     </div>
 
     <div id="aba-cartao" class="tab-content">
         <div id="cartao-area">
+            <div class="decor" style="top:40px; left:40px;">🎂</div>
+            <div class="decor" style="top:40px; right:40px;">🎉</div>
             <div class="txt-topo">Feliz Aniversário</div>
             <div id="pdfNome">NOME DO COLABORADOR</div>
             <div class="txt-parabens">Parabéns!!</div>
@@ -83,70 +82,59 @@
                 É porque ela é o que a gente tem de melhor. E aqui a sua energia é mais que um conceito, 
                 é a força que nos move e transforma o nosso mundo todos os dias.
             </p>
-            <img src="https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png" class="logo-footer">
+            <div id="logo-container-pdf"></div>
         </div>
-        <div style="text-align: center; margin-top: 20px;">
-            <button onclick="baixarPDF()" style="padding: 15px 40px; background: #d32f2f; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer;">⬇️ BAIXAR PDF</button>
-        </div>
+        <button onclick="gerarPDF()" style="display:block; margin:20px auto; padding:15px 40px; background:#d32f2f; color:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">⬇️ BAIXAR PDF</button>
     </div>
 </div>
 
 <script>
+    // Logo CMAA 2 convertido para evitar erro de carregamento externo
+    const LOGO_BASE64 = "https://cmaa.com.br/wp-content/themes/cmaa/assets/images/logo-cmaa.png"; // Link reserva caso o local falhe
+    
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
-    let database = [];
+    let aniversariantes = [];
 
-    async function carregarPlanilha() {
+    async function iniciar() {
+        // Coloca o logo nos containers
+        const imgTag = `<img src="${LOGO_BASE64}" style="height:60px" alt="CMAA">`;
+        const imgTagPdf = `<img src="${LOGO_BASE64}" class="logo-pdf" alt="CMAA">`;
+        document.getElementById('logo-container-site').innerHTML = imgTag;
+        document.getElementById('logo-container-pdf').innerHTML = imgTagPdf;
+
         try {
-            const resp = await fetch(SHEET_URL + "&cache=" + Date.now());
+            const resp = await fetch(SHEET_URL + "&t=" + Date.now());
             const csv = await resp.text();
             const linhas = csv.split(/\r?\n/).filter(l => l.trim() !== "");
             
-            // Lógica robusta para ler as colunas corretamente
-            const cabecalho = linhas[0].split(',').map(c => c.trim());
+            const hoje = new Date();
+            const diaH = hoje.getDate();
+            const mesH = hoje.getMonth() + 1;
 
-            database = linhas.slice(1).map(linha => {
-                const colunas = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Regex para não quebrar nomes com vírgulas
-                let obj = {};
-                cabecalho.forEach((h, i) => {
-                    obj[h] = colunas[i] ? colunas[i].replace(/"/g, '').trim() : "";
-                });
-                return obj;
-            });
+            const corpo = document.getElementById('tabelaDados');
+            corpo.innerHTML = "";
 
-            const unidades = [...new Set(database.map(d => d.Unidade))].sort();
-            const sel = document.getElementById('filtroUnidade');
-            sel.innerHTML = '<option value="TODAS">TODAS</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
-
-            renderizarTabela();
-        } catch (e) { console.error("Erro ao carregar nomes:", e); }
-    }
-
-    function renderizarTabela() {
-        const hoje = new Date();
-        const diaH = hoje.getDate();
-        const mesH = hoje.getMonth() + 1;
-        const filtro = document.getElementById('filtroUnidade').value;
-        const tbody = document.getElementById('corpoTabela');
-        tbody.innerHTML = "";
-
-        database.forEach((c, idx) => {
-            const partesData = c['Data de Nascimento'].split('/');
-            if(parseInt(partesData[0]) === diaH && parseInt(partesData[1]) === mesH) {
-                if(filtro === "TODAS" || c.Unidade === filtro) {
-                    tbody.innerHTML += `<tr>
-                        <td>${c.Unidade}</td>
-                        <td>${c.Matricula}</td>
-                        <td><strong>${c.Nome}</strong></td>
-                        <td>${c.Gestão}</td>
-                        <td><button class="btn-gerar" onclick="prepararPDF(${idx})">GERAR PDF</button></td>
+            linhas.slice(1).forEach(linha => {
+                const col = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                const nome = col[2]?.replace(/"/g, '') || "";
+                const data = col[3] || "";
+                
+                const partes = data.split('/');
+                if(parseInt(partes[0]) === diaH && parseInt(partes[1]) === mesH) {
+                    aniversariantes.push({ nome, unidade: col[0], matricula: col[1] });
+                    corpo.innerHTML += `<tr>
+                        <td>${col[0]}</td>
+                        <td>${col[1]}</td>
+                        <td><strong>${nome}</strong></td>
+                        <td><button class="btn-gerar" onclick="verCartao('${nome}')">VER CARTÃO</button></td>
                     </tr>`;
                 }
-            }
-        });
+            });
+        } catch (e) { console.error("Erro ao carregar nomes"); }
     }
 
-    function prepararPDF(i) {
-        document.getElementById('pdfNome').innerText = database[i].Nome.toUpperCase();
+    function verCartao(nome) {
+        document.getElementById('pdfNome').innerText = nome.toUpperCase();
         mudarAba('aba-cartao');
     }
 
@@ -156,16 +144,16 @@
         document.getElementById(id).classList.add('active');
     }
 
-    function baixarPDF() {
+    function gerarPDF() {
         const area = document.getElementById('cartao-area');
         html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
             const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
             pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG', 0, 0, 210, 297);
-            pdf.save("Cartao_Aniversario_CMAA.pdf");
+            pdf.save("Cartao_CMAA.pdf");
         });
     }
 
-    carregarPlanilha();
+    iniciar();
 </script>
 </body>
 </html>
