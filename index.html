@@ -7,88 +7,75 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { 
-            --cmaa-verde-deep: #004d2c; 
-            --cmaa-verde-light: #006838;
-            --gold: #d4af37;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        :root { --cmaa-verde: #006838; --cmaa-escuro: #004d2c; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
-        /* Menu de Abas */
-        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab-btn { padding: 12px 25px; cursor: pointer; border: none; background: none; font-weight: bold; color: #666; }
-        .tab-btn.active { color: var(--cmaa-verde-light); border-bottom: 3px solid var(--cmaa-verde-light); }
+        .tabs { display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid #eee; }
+        .tab-btn { padding: 15px 30px; cursor: pointer; border: none; background: none; font-weight: bold; color: #888; font-size: 1.1em; }
+        .tab-btn.active { color: var(--cmaa-verde); border-bottom: 4px solid var(--cmaa-verde); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Tabela e Filtros */
-        .filters { background: #eef2ef; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th { background: var(--cmaa-verde-light); color: white; padding: 12px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        .btn-gen { background: var(--cmaa-verde-light); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        /* Tabela */
+        .filters { background: #f8faf9; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e1e8e3; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--cmaa-verde); color: white; padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.85em; }
+        td { padding: 15px; border-bottom: 1px solid #eee; color: #444; }
+        .btn-gerar { background: var(--cmaa-verde); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-gerar:hover { background: var(--cmaa-escuro); transform: scale(1.05); }
 
-        /* PREVIEW DO CARTÃO (LAYOUT FIEL À IMAGEM) */
-        #cartao-pdf-area {
-            width: 595px; /* Tamanho A4 proporcional */
-            height: 842px;
-            background: linear-gradient(135deg, var(--cmaa-verde-deep) 0%, var(--cmaa-verde-light) 100%);
-            color: white;
-            position: relative;
-            padding: 40px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow: hidden;
-            margin: 0 auto;
+        /* CARTÃO PDF - DESIGN FIEL À IMAGEM */
+        #cartao-area {
+            width: 595px; height: 842px; /* Proporção A4 */
+            background: linear-gradient(135deg, var(--cmaa-escuro) 0%, var(--cmaa-verde) 100%);
+            color: white; padding: 50px; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            position: relative; overflow: hidden; margin: 0 auto;
         }
 
-        .decoracao { position: absolute; font-size: 50px; opacity: 0.8; }
-        .bolo { top: 40px; left: 40px; font-size: 80px; }
-        .confete-top { top: 20px; right: 40px; }
-        .confete-bottom { bottom: 40px; left: 40px; }
+        /* Elementos Decorativos */
+        .decor { position: absolute; font-size: 60px; opacity: 0.7; }
+        .decor.bolo { top: 40px; left: 40px; }
+        .decor.festa { top: 30px; right: 50px; }
+        .decor.confete { bottom: 150px; right: 40px; }
 
-        .header-texto { font-size: 32px; font-weight: bold; letter-spacing: 2px; margin-top: 100px; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px; text-transform: uppercase; }
+        .txt-topo { font-size: 28px; font-weight: bold; letter-spacing: 3px; margin-top: 80px; text-transform: uppercase; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
         
-        .nome-container { width: 100%; text-align: center; margin-top: 60px; min-height: 80px; display: flex; align-items: center; justify-content: center; }
-        .nome-colaborador { font-size: 42px; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); line-height: 1.1; }
+        .nome-container { height: 120px; display: flex; align-items: center; justify-content: center; margin-top: 40px; width: 100%; }
+        #pdfNome { font-size: 42px; font-weight: bold; line-height: 1.1; word-wrap: break-word; max-width: 90%; }
 
-        .parabens-texto { font-size: 72px; font-family: 'Georgia', serif; font-style: italic; margin: 20px 0; color: white; }
+        .txt-parabens { font-size: 85px; font-family: 'Georgia', serif; font-style: italic; margin: 10px 0; }
         
-        .mensagem-corpo { font-size: 18px; line-height: 1.6; text-align: center; max-width: 80%; margin: 30px auto; font-weight: 300; }
-        
-        .logo-cmaa { position: absolute; bottom: 60px; width: 220px; filter: brightness(0) invert(1); }
-        .tagline { position: absolute; bottom: 40px; font-size: 14px; letter-spacing: 1px; opacity: 0.9; }
+        .txt-mensagem { font-size: 19px; line-height: 1.6; font-weight: 300; margin: 20px 20px; text-align: center; }
 
-        .controls { text-align: center; margin-top: 20px; padding-bottom: 40px; }
-        .btn-download { background: #c0392b; color: white; padding: 15px 40px; border: none; border-radius: 50px; font-size: 1.2em; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .logo-cmaa { position: absolute; bottom: 70px; width: 220px; filter: brightness(0) invert(1); }
+        .tagline { position: absolute; bottom: 45px; font-size: 15px; letter-spacing: 1.5px; opacity: 0.8; }
+
+        .btn-download { background: #d32f2f; color: white; padding: 20px 50px; border: none; border-radius: 50px; font-size: 1.3em; font-weight: bold; cursor: pointer; display: block; margin: 30px auto; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="status-msg" style="text-align:center; padding:10px; margin-bottom:10px; border-radius:5px; display:none;"></div>
-
     <div class="tabs">
-        <div class="tab-btn active" onclick="openTab(event, 'aba-lista')">Aniversariantes do Dia</div>
-        <div class="tab-btn" onclick="openTab(event, 'aba-cartao')">Gerador de PDF</div>
+        <button class="tab-btn active" onclick="mudarAba('aba-lista')">Aniversariantes do Dia</button>
+        <button class="tab-btn" onclick="mudarAba('aba-cartao')">Visualizar Cartão</button>
     </div>
 
     <div id="aba-lista" class="tab-content active">
         <div class="filters">
-            <strong>Unidade:</strong>
-            <select id="filtroUnidade" onchange="atualizarTabela()"></select>
+            <strong>Filtrar Unidade:</strong>
+            <select id="filtroUnidade" onchange="renderizarTabela()" style="padding: 8px; border-radius: 5px; margin-left: 10px;"></select>
         </div>
-        <table id="tabelaAniversariantes">
+        <table id="minhaTabela">
             <thead>
                 <tr>
                     <th>Unidade</th>
                     <th>Matrícula</th>
-                    <th>Nome</th>
+                    <th>Colaborador</th>
                     <th>Gestão</th>
-                    <th>Ação</th>
+                    <th style="text-align:center">Ação</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -96,20 +83,20 @@
     </div>
 
     <div id="aba-cartao" class="tab-content">
-        <div id="cartao-pdf-area">
-            <div class="decoracao bolo">🎂</div>
-            <div class="decoracao confete-top">🥳</div>
-            <div class="decoracao confete-bottom">🎉</div>
-            
-            <div class="header-texto">Feliz Aniversário</div>
+        <div id="cartao-area">
+            <div class="decor bolo">🎂</div>
+            <div class="decor festa">🥳</div>
+            <div class="decor confete">🎉</div>
+
+            <div class="txt-topo">Feliz Aniversário</div>
             
             <div class="nome-container">
-                <div class="nome-colaborador" id="displayNome">NOME DO COLABORADOR</div>
+                <div id="pdfNome">NOME DO COLABORADOR</div>
             </div>
 
-            <div class="parabens-texto">Parabéns!!</div>
+            <div class="txt-parabens">Parabéns!!</div>
 
-            <p class="mensagem-corpo">
+            <p class="txt-mensagem">
                 Já reparou que a nossa energia muda quando celebramos mais um ano de vida? 
                 É porque ela é o que a gente tem de melhor. E aqui a sua energia é mais que um conceito, 
                 é a força que nos move e transforma o nosso mundo todos os dias.
@@ -121,111 +108,105 @@
             <div class="tagline">Energia que transforma</div>
         </div>
 
-        <div class="controls">
-            <button class="btn-download" onclick="exportarPDF()">⬇️ BAIXAR CARTÃO PDF</button>
-        </div>
+        <button class="btn-download" onclick="baixarPDF()">⬇️ BAIXAR CARTÃO PDF</button>
     </div>
 </div>
 
 <script>
-    const URL_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
-    let dadosBrutos = [];
+    const LINK_PLANILHA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
+    let database = [];
 
     async function carregarDados() {
         try {
-            const resp = await fetch(URL_CSV);
-            const csv = await resp.text();
-            const linhas = csv.split(/\r?\n/).filter(l => l.trim() !== '');
-            const cabecalho = linhas[0].split(',');
+            const r = await fetch(LINK_PLANILHA + "&cache=" + Date.now());
+            const texto = await r.text();
+            
+            // Tratamento especial para não cortar nomes (Regex para CSV)
+            const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
+            const header = parsearLinha(linhas[0]);
 
-            dadosBrutos = linhas.slice(1).map(linha => {
-                const colunas = linha.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || linha.split(',');
-                let obj = {};
-                cabecalho.forEach((label, i) => {
-                    obj[label.trim()] = colunas[i] ? colunas[i].replace(/"/g, '').trim() : '';
-                });
-                return obj;
+            database = linhas.slice(1).map(linha => {
+                const vals = parsearLinha(linha);
+                let item = {};
+                header.forEach((h, i) => item[h.trim()] = vals[i] ? vals[i].trim() : "");
+                return item;
             });
 
-            // Popular Unidades
-            const unidades = [...new Set(dadosBrutos.map(d => d.Unidade))].sort();
-            const select = document.getElementById('filtroUnidade');
-            select.innerHTML = '<option value="TODAS">TODAS AS UNIDADES</option>';
-            unidades.forEach(u => select.innerHTML += `<option value="${u}">${u}</option>`);
+            // Setup filtros e tabela
+            const unidades = [...new Set(database.map(d => d.Unidade))].sort();
+            const sel = document.getElementById('filtroUnidade');
+            sel.innerHTML = '<option value="TODAS">TODAS AS UNIDADES</option>';
+            unidades.forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
 
-            atualizarTabela();
-        } catch (e) {
-            console.error(e);
-            alert("Erro ao ler a planilha. Verifique se ela está pública.");
-        }
+            renderizarTabela();
+        } catch (e) { alert("Erro ao carregar dados. Verifique a internet."); }
     }
 
-    function atualizarTabela() {
+    // Função que garante que nomes com vírgulas ou aspas não sejam cortados
+    function parsearLinha(linha) {
+        const pattern = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+        const matches = linha.match(pattern);
+        return matches ? matches.map(m => m.replace(/^"|"$/g, '')) : linha.split(',');
+    }
+
+    function renderizarTabela() {
         const hoje = new Date();
-        const diaH = hoje.getDate();
-        const mesH = hoje.getMonth() + 1;
+        const dH = hoje.getDate();
+        const mH = hoje.getMonth() + 1;
         const filtro = document.getElementById('filtroUnidade').value;
-        const tbody = document.querySelector('#tabelaAniversariantes tbody');
-        
-        tbody.innerHTML = '';
-        
-        dadosBrutos.forEach((c, index) => {
+        const tbody = document.querySelector("#minhaTabela tbody");
+        tbody.innerHTML = "";
+
+        database.forEach((c, idx) => {
             if(!c['Data de Nascimento']) return;
             const partes = c['Data de Nascimento'].split('/');
-            const diaC = parseInt(partes[0]);
-            const mesC = parseInt(partes[1]);
-
-            if(diaC === diaH && mesC === mesH) {
+            if(parseInt(partes[0]) === dH && parseInt(partes[1]) === mH) {
                 if(filtro === "TODAS" || c.Unidade === filtro) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
+                    tbody.innerHTML += `<tr>
                         <td>${c.Unidade}</td>
                         <td>${c.Matricula}</td>
-                        <td><strong>${c.Nome}</strong></td>
+                        <td style="font-weight:bold">${c.Nome}</td>
                         <td>${c.Gestão}</td>
-                        <td><button class="btn-gen" onclick="prepararCartao(${index})">GERAR PDF</button></td>
-                    `;
-                    tbody.appendChild(tr);
+                        <td style="text-align:center"><button class="btn-gerar" onclick="irParaCartao(${idx})">GERAR PDF</button></td>
+                    </tr>`;
                 }
             }
         });
     }
 
-    function prepararCartao(index) {
-        const colab = dadosBrutos[index];
-        const display = document.getElementById('displayNome');
-        display.innerText = colab.Nome.toUpperCase();
+    function irParaCartao(i) {
+        const colab = database[i];
+        const elNome = document.getElementById('pdfNome');
+        elNome.innerText = colab.Nome.toUpperCase();
+        
+        // Ajuste de fonte para nomes gigantes
+        if(colab.Nome.length > 30) elNome.style.fontSize = "28px";
+        else if(colab.Nome.length > 20) elNome.style.fontSize = "35px";
+        else elNome.style.fontSize = "42px";
 
-        // Ajuste dinâmico de fonte para nomes longos
-        if(colab.Nome.length > 25) display.style.fontSize = "30px";
-        else if(colab.Nome.length > 35) display.style.fontSize = "24px";
-        else display.style.fontSize = "42px";
-
-        openTab(null, 'aba-cartao');
+        mudarAba('aba-cartao');
     }
 
-    function exportarPDF() {
-        const { jsPDF } = window.jspdf;
-        const area = document.getElementById('cartao-pdf-area');
-        const nome = document.getElementById('displayNome').innerText;
-
-        html2canvas(area, { scale: 3, useCORS: true }).then(canvas => {
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const width = pdf.internal.pageSize.getWidth();
-            const height = pdf.internal.pageSize.getHeight();
-            
-            pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
-            pdf.save(`Cartao_CMAA_${nome}.pdf`);
-        });
-    }
-
-    function openTab(evt, tabId) {
+    function mudarAba(id) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        if(evt) evt.currentTarget.classList.add('active');
+        document.getElementById(id).classList.add('active');
+        // Adiciona classe active no botão correspondente
+        if(id === 'aba-lista') document.querySelectorAll('.tab-btn')[0].classList.add('active');
         else document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    }
+
+    function baixarPDF() {
+        const { jsPDF } = window.jspdf;
+        const area = document.getElementById('cartao-area');
+        const nome = document.getElementById('pdfNome').innerText;
+
+        html2canvas(area, { scale: 3, useCORS: true }).then(canvas => {
+            const img = canvas.toDataURL('image/jpeg', 0.95);
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            pdf.addImage(img, 'JPEG', 0, 0, 210, 297);
+            pdf.save(`Cartao_CMAA_${nome}.pdf`);
+        });
     }
 
     carregarDados();
