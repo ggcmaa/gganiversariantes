@@ -67,7 +67,7 @@
                 </tr>
             </thead>
             <tbody id="corpoTabela">
-                <tr><td colspan="6" style="text-align:center;">Iniciando busca do arquivo...</td></tr>
+                <tr><td colspan="6" style="text-align:center;">Buscando dados no Excel...</td></tr>
             </tbody>
         </table>
     </div>
@@ -88,69 +88,54 @@
 </div>
 
 <script>
-    // TESTA TODOS OS NOMES POSSÍVEIS QUE VOCÊ PODE TER DADO AO ARQUIVO
+    // Tenta carregar o arquivo correto. Se seu arquivo chama 'aniversarios.xlsx', ele vai achar.
     const URL_BASE = 'https://raw.githubusercontent.com/ggcmaa/gganiversariantes/main/';
-    const ARQUIVOS_PARA_TESTAR = ['aniversarios.xlsx', 'data.xlsx', 'index.xlsx', 'Aniversarios.xlsx'];
+    const ARQUIVOS = ['aniversarios.xlsx', 'data.xlsx', 'index.xlsx'];
     
     let baseDados = [];
     let abaAtual = 'hoje';
 
     async function carregar() {
-        let arquivoEncontrado = null;
-        let erroDetalhado = "";
-
-        for (const nomeArq of ARQUIVOS_PARA_TESTAR) {
+        let sucesso = false;
+        for (const arq of ARQUIVOS) {
             try {
-                const response = await fetch(URL_BASE + nomeArq + "?t=" + Date.now());
-                if (!response.ok) {
-                    erroDetalhado += `${nomeArq} (não encontrado); `;
-                    continue;
-                }
+                const response = await fetch(URL_BASE + arq + "?t=" + Date.now());
+                if (!response.ok) continue;
                 
                 const buffer = await response.arrayBuffer();
-                const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
-                const abaJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                const workbook = XLSX.read(buffer, { type: 'array' });
+                const abaJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false });
 
                 baseDados = abaJson.map(item => {
-                    let dStr = "";
-                    let val = item.Data || item.data || "";
-
-                    if (val instanceof Date) {
-                        // Ajuste para fuso horário local e formato BR
-                        dStr = val.toLocaleDateString('pt-BR', {timeZone: 'UTC'}); 
-                    } else if (typeof val === 'number') {
-                        const dateObj = XLSX.SSF.parse_date_code(val);
-                        dStr = `${dateObj.d.toString().padStart(2, '0')}/${dateObj.m.toString().padStart(2, '0')}/${dateObj.y}`;
-                    } else {
-                        dStr = val.toString();
-                    }
+                    // Normaliza os nomes das colunas (tira espaços e deixa minúsculo para busca)
+                    const buscarValor = (listaNomes) => {
+                        for(let n of listaNomes) {
+                            let chave = Object.keys(item).find(k => k.trim().toLowerCase() === n.toLowerCase());
+                            if (chave) return item[chave];
+                        }
+                        return "";
+                    };
 
                     return {
-                        unidade: item.Unidade || item.unidade || "GERAL",
-                        matricula: item.Matricula || item.matricula || "---",
-                        nome: item.Colaborador || item.colaborador || item.Nome || "---",
-                        data: dStr,
-                        gestao: item.Gestao || item.gestao || "---"
+                        unidade: buscarValor(['Unidade', 'unidade']) || "GERAL",
+                        matricula: buscarValor(['Matricula', 'matrícula', 'Matrícula']) || "---",
+                        nome: buscarValor(['Colaborador', 'Nome', 'nome']) || "---",
+                        data: buscarValor(['Data', 'data']) || "",
+                        gestao: buscarValor(['Gestao', 'gestão', 'Gestão']) || "---"
                     };
                 });
 
-                arquivoEncontrado = nomeArq;
+                sucesso = true;
                 break; 
-            } catch (e) { console.error("Erro ao ler " + nomeArq, e); }
+            } catch (e) { console.error(e); }
         }
 
-        if (arquivoEncontrado) {
+        if (sucesso) {
             const unidades = ["TODAS AS UNIDADES", ...new Set(baseDados.map(d => d.unidade))].sort();
             document.getElementById('filtroUnidade').innerHTML = unidades.map(u => `<option value="${u}">${u}</option>`).join('');
             filtrarTabela();
         } else {
-            document.getElementById('corpoTabela').innerHTML = `
-                <tr><td colspan="6" style="color:red; text-align:center;">
-                <b>ERRO DE CONEXÃO</b><br>
-                Não foi possível encontrar o arquivo Excel no GitHub.<br>
-                <small>Tentados: ${erroDetalhado}</small><br>
-                Verifique se o arquivo está na raiz do repositório 'gganiversariantes'.
-                </td></tr>`;
+            document.getElementById('corpoTabela').innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Erro: Arquivo Excel não encontrado no GitHub. Verifique se o nome é 'aniversarios.xlsx'.</td></tr>`;
         }
     }
 
@@ -158,22 +143,35 @@
         const uniFiltro = document.getElementById('filtroUnidade').value;
         const buscaNome = document.getElementById('buscaNome').value.toLowerCase();
         
-        // Data de hoje (27/04/2026 conforme sistema)
+        // Data atual do sistema
         const hoje = new Date();
-        const diaH = hoje.getDate().toString().padStart(2, '0');
-        const mesH = (hoje.getMonth() + 1).toString().padStart(2, '0');
+        const diaH = hoje.getDate();
+        const mesH = hoje.getMonth() + 1;
         
-        let proxMesObj = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
-        const mesP = (proxMesObj.getMonth() + 1).toString().padStart(2, '0');
+        const mesP = (new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1)).getMonth() + 1;
 
         const filtrados = baseDados.filter(d => {
             const matchesUni = uniFiltro === "TODAS AS UNIDADES" || d.unidade === uniFiltro;
             const matchesNome = d.nome.toLowerCase().includes(buscaNome);
             
-            // Quebra DD/MM/YYYY para comparar apenas DD e MM
-            const partes = d.data.split('/');
-            const dDia = partes[0] ? partes[0].padStart(2, '0') : "";
-            const dMes = partes[1] ? partes[1].padStart(2, '0') : "";
+            // LÓGICA DE DATA ROBUSTA
+            // Aceita: "27/04/1990", "27/04", "4/27/1990" ou datas do Excel
+            let dDia = 0, dMes = 0;
+
+            if (d.data.includes('/')) {
+                const partes = d.data.split('/');
+                // Verifica se é DD/MM ou MM/DD baseado no valor
+                if (parseInt(partes[0]) > 12) { // Claramente Dia/Mes
+                    dDia = parseInt(partes[0]);
+                    dMes = parseInt(partes[1]);
+                } else if (parseInt(partes[1]) > 12) { // Claramente Mes/Dia
+                    dDia = parseInt(partes[1]);
+                    dMes = parseInt(partes[0]);
+                } else { // Inconclusivo (ex 05/06), assume padrão brasileiro DD/MM
+                    dDia = parseInt(partes[0]);
+                    dMes = parseInt(partes[1]);
+                }
+            }
 
             let matchesData = (abaAtual === 'hoje') ? (dDia === diaH && dMes === mesH) : (dMes === mesP);
             return matchesUni && matchesNome && matchesData;
@@ -190,7 +188,7 @@
                     <button class="btn-gerar" onclick="abrirCartao('${d.nome}')">GERAR</button>
                 </td>
             </tr>
-        `).join('') : `<tr><td colspan="6" style="text-align:center;">Nenhum aniversariante encontrado para ${abaAtual === 'hoje' ? 'hoje ('+diaH+'/'+mesH+')' : 'o próximo mês'}.</td></tr>`;
+        `).join('') : `<tr><td colspan="6" style="text-align:center;">Nenhum aniversariante encontrado para ${abaAtual === 'hoje' ? 'hoje ('+diaH.toString().padStart(2,'0')+'/'+mesH.toString().padStart(2,'0')+')' : 'o próximo mês'}.</td></tr>`;
     }
 
     function mudarAba(aba) {
@@ -218,8 +216,7 @@
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
-            const nome = document.getElementById('pdfNome').innerText;
-            pdf.save(`Aniversario_${nome}.pdf`);
+            pdf.save("Aniversario.pdf");
         });
     }
 
