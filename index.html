@@ -5,44 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Aniversariantes CMAA</title>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        :root { --cmaa-verde: #006838; --cmaa-escuro: #004d2c; --cmaa-claro: #e8f5e9; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 3px solid var(--cmaa-verde); padding-bottom: 15px; }
-        .logo-site { height: 65px; }
+        :root { --cmaa-verde: #006838; --cmaa-escuro: #004d2c; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        /* Cabeçalho e Nav */
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--cmaa-verde); padding-bottom: 15px; margin-bottom: 20px; }
         .tabs-nav { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 12px 25px; cursor: pointer; border: 1px solid #ddd; background: #f8f9fa; border-radius: 10px; font-weight: bold; transition: 0.3s; }
+        .tab-btn { padding: 10px 20px; cursor: pointer; border: 1px solid #ddd; background: #f8f9fa; border-radius: 8px; font-weight: bold; }
         .tab-btn.active { background: var(--cmaa-verde); color: white; border-color: var(--cmaa-verde); }
-        .controls { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #f8faf9; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e1e8e3; }
-        .search-input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex-grow: 1; min-width: 250px; }
-        .select-input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; min-width: 200px; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th { background: var(--cmaa-verde); color: white; padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.85em; }
-        td { padding: 15px; border-bottom: 1px solid #eee; color: #444; }
-        .btn-gerar { background: var(--cmaa-verde); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        #view-cartao { display: none; }
-        #view-cartao.active { display: block; }
-        .hidden { display: none; }
-        #cartao-area { width: 595px; height: 842px; background: linear-gradient(135deg, var(--cmaa-escuro) 0%, var(--cmaa-verde) 100%); color: white; padding: 50px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; margin: 0 auto; }
-        .txt-topo { font-size: 26px; font-weight: bold; margin-top: 80px; text-transform: uppercase; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 5px; }
-        #pdfNome { font-size: 38px; font-weight: bold; margin: 40px 0; min-height: 90px; display: flex; align-items: center; justify-content: center; width: 100%; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
-        .txt-parabens { font-size: 80px; font-family: 'Georgia', serif; font-style: italic; margin-bottom: 20px; }
-        .txt-msg { font-size: 19px; line-height: 1.6; font-weight: 300; padding: 0 20px; }
-        .logo-pdf { position: absolute; bottom: 70px; width: 260px; }
+        
+        /* Controles */
+        .controls { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; align-items: center; }
+        .search-input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex-grow: 1; }
+        
+        /* Tabela */
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--cmaa-verde); color: white; padding: 12px; text-align: left; text-transform: uppercase; font-size: 0.85em; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        
+        /* Botões */
+        .btn-acao { background: var(--cmaa-verde); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-wpp { background: #25D366; }
+        .btn-export { background: #1d6f42; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: none; }
+
+        /* ÁREA DO CARTÃO */
+        #view-cartao { display: none; text-align: center; }
+        .cartao-wrapper { position: relative; width: 500px; margin: 20px auto; }
+        
+        #cartao-area { 
+            width: 500px; height: 700px; 
+            background: linear-gradient(135deg, var(--cmaa-escuro), var(--cmaa-verde)); 
+            color: white; padding: 40px; border-radius: 10px; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-sizing: border-box; overflow: hidden; position: relative;
+        }
+
+        .decoracao { position: absolute; font-size: 40px; opacity: 0.8; }
+        .confete { top: 20px; right: 20px; }
+        .balao { bottom: 100px; left: 20px; }
+        .bolo { top: 20px; left: 20px; }
+
+        .cartao-titulo { font-size: 45px; font-family: 'Georgia', serif; font-style: italic; margin: 0; }
+        .cartao-nome { font-size: 32px; margin: 30px 0; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid rgba(255,255,255,0.3); width: 80%; padding-bottom: 10px; }
+        .cartao-msg { font-size: 20px; line-height: 1.5; padding: 0 20px; }
+        .cartao-logo { margin-top: 50px; width: 220px; }
+
+        .botoes-cartao { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="view-lista">
-        <div class="header-top">
-            <h2 id="tituloPagina" style="color: var(--cmaa-verde); margin: 0;">Aniversariantes de Hoje</h2>
-            <img src="Logo.png" class="logo-site" alt="Logo CMAA">
+        <div class="header">
+            <h2 id="tituloPagina">Aniversariantes de Hoje</h2>
+            <img src="Logo.png" alt="Logo CMAA" style="height: 50px;">
         </div>
 
         <div class="tabs-nav">
@@ -51,155 +75,157 @@
         </div>
 
         <div class="controls">
-            <select id="filtroUnidade" class="select-input" onchange="filtrarTabela()"></select>
-            <input type="text" id="buscaNome" class="search-input" placeholder="Buscar por nome do colaborador..." onkeyup="filtrarTabela()">
+            <input type="text" id="buscaNome" class="search-input" placeholder="Buscar por nome..." onkeyup="filtrarTabela()">
+            <button id="btnExportar" class="btn-export" onclick="exportarExcel()">📊 Exportar para Excel</button>
         </div>
 
-        <table>
+        <div id="status" style="text-align:center; padding:20px; font-weight:bold; color:#666;">Carregando dados...</div>
+
+        <table id="tabelaAniv" style="display:none;">
             <thead>
                 <tr>
                     <th>Unidade</th>
                     <th>Matrícula</th>
                     <th>Colaborador</th>
                     <th>Data</th>
-                    <th>Gestão</th>
                     <th id="thAcao">Ação</th>
                 </tr>
             </thead>
-            <tbody id="corpoTabela">
-                <tr><td colspan="6" style="text-align:center;">Lendo arquivo Excel...</td></tr>
-            </tbody>
+            <tbody id="corpoTabela"></tbody>
         </table>
     </div>
 
     <div id="view-cartao">
-        <button onclick="voltarLista()" style="margin-bottom: 20px; cursor: pointer; padding: 10px 15px; border-radius: 8px; border: 1px solid #ccc; background: #fff;">⬅ Voltar</button>
-        <div id="cartao-area">
-            <div class="txt-topo">Feliz Aniversário</div>
-            <div id="pdfNome">NOME DO COLABORADOR</div>
-            <div class="txt-parabens">Parabéns!!</div>
-            <p class="txt-msg">Sua energia é a força que nos move e transforma o nosso mundo todos os dias.</p>
-            <img src="Logobranco.png" class="logo-pdf" alt="Logo CMAA Branco">
+        <button class="btn-acao" onclick="voltarLista()" style="background:#666;">⬅ Voltar</button>
+        
+        <div class="cartao-wrapper">
+            <div id="cartao-area">
+                <span class="decoracao bolo">🎂</span>
+                <span class="decoracao confete">🎉</span>
+                <span class="decoracao balao">🎈</span>
+                
+                <h1 class="cartao-titulo">Parabéns!</h1>
+                <div id="nomeColaborador" class="cartao-nome"></div>
+                <p class="cartao-msg">Sua energia é a força que nos move e transforma o nosso mundo todos os dias.</p>
+                <img src="Logobranco.png" class="cartao-logo" alt="CMAA">
+            </div>
         </div>
-        <div style="text-align:center; margin-top:20px;">
-            <button class="btn-gerar" onclick="gerarPDF()" style="padding:15px 30px;">BAIXAR PDF</button>
+
+        <div class="botoes-cartao">
+            <button class="btn-acao" onclick="baixarPDF()">
+                <i class="fas fa-file-pdf"></i> Baixar PDF
+            </button>
+            <a id="btnWhatsapp" href="#" target="_blank" class="btn-acao btn-wpp">
+                <i class="fab fa-whatsapp"></i> Enviar WhatsApp
+            </a>
         </div>
     </div>
 </div>
 
 <script>
-    const URL_BASE = 'https://raw.githubusercontent.com/ggcmaa/gganiversariantes/main/';
-    const ARQUIVOS = ['index.xlsx', 'aniversarios.xlsx', 'data.xlsx'];
-    
+    const URL_EXCEL = 'https://raw.githubusercontent.com/ggcmaa/gganiversariantes/main/index.xlsx';
     let baseDados = [];
     let abaAtual = 'hoje';
 
-    async function carregar() {
-        let sucesso = false;
-        for (const arq of ARQUIVOS) {
-            try {
-                const response = await fetch(URL_BASE + arq + "?t=" + Date.now());
-                if (!response.ok) continue;
-                
-                const buffer = await response.arrayBuffer();
-                const workbook = XLSX.read(buffer, { type: 'array' });
-                const abaJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
-
-                baseDados = abaJson.map(item => {
-                    // Mapeamento exato baseado na sua imagem do Excel
-                    return {
-                        unidade: item["Unidade"] || "GERAL",
-                        matricula: item["Matricula"] || "---",
-                        nome: item["Nome"] || "---",
-                        data: item["Data de Nascimento"] || "",
-                        gestao: item["Gestão"] || item["Gestao"] || "---"
-                    };
-                });
-
-                sucesso = true;
-                break; 
-            } catch (e) { console.error(e); }
-        }
-
-        if (sucesso) {
-            const unidades = ["TODAS AS UNIDADES", ...new Set(baseDados.map(d => d.unidade))].sort();
-            document.getElementById('filtroUnidade').innerHTML = unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+    async function carregarDados() {
+        try {
+            const resp = await fetch(URL_EXCEL + '?t=' + Date.now());
+            const arrayBuffer = await resp.arrayBuffer();
+            const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
+            baseDados = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, defval: "" });
             filtrarTabela();
-        } else {
-            document.getElementById('corpoTabela').innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Erro: Arquivo não encontrado. Verifique se o arquivo no GitHub se chama 'index.xlsx'.</td></tr>`;
+        } catch (err) {
+            document.getElementById('status').innerText = "Erro ao carregar arquivo.";
         }
-    }
-
-    function filtrarTabela() {
-        const uniFiltro = document.getElementById('filtroUnidade').value;
-        const buscaNome = document.getElementById('buscaNome').value.toLowerCase();
-        
-        const hoje = new Date();
-        const diaH = hoje.getDate();
-        const mesH = hoje.getMonth() + 1;
-        const mesP = (new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1)).getMonth() + 1;
-
-        const filtrados = baseDados.filter(d => {
-            const matchesUni = uniFiltro === "TODAS AS UNIDADES" || d.unidade === uniFiltro;
-            const matchesNome = d.nome.toLowerCase().includes(buscaNome);
-            
-            let dDia = 0, dMes = 0;
-            const dataLimpa = d.data.toString().trim();
-
-            if (dataLimpa.includes('/')) {
-                const partes = dataLimpa.split('/');
-                dDia = parseInt(partes[0]);
-                dMes = parseInt(partes[1]);
-            }
-
-            let matchesData = (abaAtual === 'hoje') ? (dDia === diaH && dMes === mesH) : (dMes === mesP);
-            return matchesUni && matchesNome && matchesData;
-        });
-
-        document.getElementById('corpoTabela').innerHTML = filtrados.length ? filtrados.map(d => `
-            <tr>
-                <td>${d.unidade}</td>
-                <td>${d.matricula}</td>
-                <td><strong>${d.nome}</strong></td>
-                <td>${d.data}</td>
-                <td>${d.gestao}</td>
-                <td style="display: ${abaAtual === 'hoje' ? '' : 'none'}">
-                    <button class="btn-gerar" onclick="abrirCartao('${d.nome}')">GERAR</button>
-                </td>
-            </tr>
-        `).join('') : `<tr><td colspan="6" style="text-align:center;">Nenhum aniversariante encontrado para ${abaAtual === 'hoje' ? 'hoje ('+diaH.toString().padStart(2,'0')+'/'+mesH.toString().padStart(2,'0')+')' : 'o próximo mês'}.</td></tr>`;
     }
 
     function mudarAba(aba) {
         abaAtual = aba;
         document.getElementById('tabHoje').classList.toggle('active', aba === 'hoje');
         document.getElementById('tabProximo').classList.toggle('active', aba === 'proximo');
-        document.getElementById('thAcao').style.display = aba === 'hoje' ? '' : 'none';
+        document.getElementById('btnExportar').style.display = aba === 'proximo' ? 'block' : 'none';
+        document.getElementById('thAcao').style.display = aba === 'hoje' ? 'table-cell' : 'none';
         filtrarTabela();
     }
 
+    function filtrarTabela() {
+        const busca = document.getElementById('buscaNome').value.toLowerCase();
+        const hoje = new Date();
+        const diaH = hoje.getDate().toString().padStart(2, '0');
+        const mesH = (hoje.getMonth() + 1).toString().padStart(2, '0');
+        const mesP = (new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1).getMonth() + 1).toString().padStart(2, '0');
+
+        const filtrados = baseDados.filter(row => {
+            const nome = (row["Nome"] || row["Colaborador"] || "").toLowerCase();
+            const dataRow = row["Data de Nascimento"] || row["Data"] || "";
+            if (!nome.includes(busca)) return false;
+            
+            if (abaAtual === 'hoje') return dataRow.startsWith(`${diaH}/${mesH}`);
+            const partes = dataRow.split('/');
+            return partes[1] === mesP;
+        });
+
+        renderizarTabela(filtrados);
+    }
+
+    function renderizarTabela(lista) {
+        const corpo = document.getElementById('corpoTabela');
+        const status = document.getElementById('status');
+        const tabela = document.getElementById('tabelaAniv');
+
+        if (lista.length === 0) {
+            status.style.display = 'block'; status.innerText = "Nenhum registro encontrado.";
+            tabela.style.display = 'none'; return;
+        }
+
+        status.style.display = 'none'; tabela.style.display = 'table';
+        corpo.innerHTML = lista.map(aniv => {
+            const nome = aniv.Nome || aniv.Colaborador;
+            return `<tr>
+                <td>${aniv.Unidade || ""}</td>
+                <td>${aniv.Matricula || aniv.Matrícula || ""}</td>
+                <td><b>${nome}</b></td>
+                <td>${aniv["Data de Nascimento"] || aniv.Data || ""}</td>
+                <td style="display: ${abaAtual === 'hoje' ? 'table-cell' : 'none'}">
+                    <button class="btn-acao" onclick="abrirCartao('${nome}')">GERAR CARTÃO</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
     function abrirCartao(nome) {
-        document.getElementById('pdfNome').innerText = nome.toUpperCase();
-        document.getElementById('view-lista').classList.add('hidden');
-        document.getElementById('view-cartao').classList.add('active');
+        document.getElementById('view-lista').style.display = 'none';
+        document.getElementById('view-cartao').style.display = 'block';
+        document.getElementById('nomeColaborador').innerText = nome.toUpperCase();
+        
+        // Configura link do WhatsApp
+        const msg = window.encodeURIComponent(`Parabéns pelo seu dia, ${nome}! 🎂🎈`);
+        document.getElementById('btnWhatsapp').href = `https://wa.me/?text=${msg}`;
     }
 
     function voltarLista() {
-        document.getElementById('view-lista').classList.remove('hidden');
-        document.getElementById('view-cartao').classList.remove('active');
+        document.getElementById('view-lista').style.display = 'block';
+        document.getElementById('view-cartao').style.display = 'none';
     }
 
-    function gerarPDF() {
+    function baixarPDF() {
         const area = document.getElementById('cartao-area');
         html2canvas(area, { scale: 2 }).then(canvas => {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
-            pdf.save("Aniversario_CMAA.pdf");
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 5, 5, 200, 280);
+            pdf.save(`Cartao_${document.getElementById('nomeColaborador').innerText}.pdf`);
         });
     }
 
-    carregar();
+    function exportarExcel() {
+        const ws = XLSX.utils.json_to_sheet(baseDados);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Dados");
+        XLSX.writeFile(wb, "Aniversariantes.xlsx");
+    }
+
+    carregarDados();
 </script>
 </body>
 </html>
