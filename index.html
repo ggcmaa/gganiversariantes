@@ -41,10 +41,11 @@
             margin: 20px auto; position: relative; overflow: hidden;
         }
 
-        .decoracao { position: absolute; font-size: 45px; }
-        .bolo { top: 20px; left: 20px; }
-        .confete { top: 20px; right: 20px; }
-        .balao { bottom: 120px; left: 20px; }
+        /* Garantindo que os símbolos apareçam no PDF */
+        .decoracao { position: absolute; font-size: 50px; z-index: 10; line-height: 1; }
+        .bolo { top: 30px; left: 30px; }
+        .confete { top: 30px; right: 30px; }
+        .balao { bottom: 130px; left: 30px; }
 
         .cartao-titulo { font-size: 40px; font-family: serif; font-style: italic; margin-bottom: 10px; border-bottom: 2px solid white; }
         .cartao-nome { font-size: 30px; margin: 30px 0; font-weight: bold; text-transform: uppercase; text-align: center; width: 90%; }
@@ -91,19 +92,24 @@
 
     <div id="view-cartao">
         <button class="btn-acao" onclick="voltarLista()" style="background:#666; margin-bottom: 20px;">⬅ Voltar</button>
+        
         <div id="cartao-area">
             <span class="decoracao bolo">🎂</span>
             <span class="decoracao confete">🎉</span>
             <span class="decoracao balao">🎈</span>
+            
             <h1 class="cartao-titulo">Feliz Aniversário</h1>
             <div id="nomeColaborador" class="cartao-nome"></div>
             <h2 style="font-family: serif; font-style: italic; font-size: 50px;">Parabéns!!</h2>
             <p class="cartao-msg">Sua energia é a força que nos move e transforma o nosso mundo todos os dias.</p>
             <img src="Logobranco.png" class="cartao-logo">
         </div>
+
         <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
             <button class="btn-acao" onclick="baixarPDF()"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
-            <a id="btnWhatsapp" href="#" target="_blank" class="btn-acao btn-wpp"><i class="fab fa-whatsapp"></i> Enviar WhatsApp</a>
+            <a id="btnWhatsapp" href="#" target="_blank" class="btn-acao btn-wpp">
+                <i class="fab fa-whatsapp"></i> Enviar WhatsApp
+            </a>
         </div>
     </div>
 </div>
@@ -132,6 +138,7 @@
         abaAtual = aba;
         document.getElementById('tabHoje').classList.toggle('active', aba === 'hoje');
         document.getElementById('tabProximo').classList.toggle('active', aba === 'proximo');
+        // Controle de visibilidade do botão de exportação e coluna de ação
         document.getElementById('btnExportar').style.display = aba === 'proximo' ? 'block' : 'none';
         document.getElementById('thAcao').style.display = aba === 'hoje' ? 'table-cell' : 'none';
         filtrarTabela();
@@ -175,7 +182,8 @@
         document.getElementById('view-lista').style.display = 'none';
         document.getElementById('view-cartao').style.display = 'block';
         document.getElementById('nomeColaborador').innerText = nome.toUpperCase();
-        document.getElementById('btnWhatsapp').href = `https://wa.me/?text=${encodeURIComponent('Parabéns, ' + nome + '! 🎂🎈')}`;
+        // Item 3: Configuração dinâmica do WhatsApp
+        document.getElementById('btnWhatsapp').href = `https://wa.me/?text=${encodeURIComponent('Parabéns, ' + nome + '! 🎂🎈 Desejamos a você muitas felicidades!')}`;
     }
 
     function voltarLista() {
@@ -185,7 +193,8 @@
 
     function baixarPDF() {
         const area = document.getElementById('cartao-area');
-        html2canvas(area, { scale: 2 }).then(canvas => {
+        // Escala 2 ajuda a manter a qualidade dos emojis no PDF
+        html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
             const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 5, 5, 200, 280);
             pdf.save(`Cartao_${document.getElementById('nomeColaborador').innerText}.pdf`);
@@ -193,6 +202,7 @@
     }
 
     function exportarExcel() {
+        if(dadosAtuais.length === 0) return;
         const ws = XLSX.utils.json_to_sheet(dadosAtuais);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Aniversariantes");
