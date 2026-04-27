@@ -6,13 +6,20 @@
     <title>Portal de Aniversariantes CMAA</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
-        :root { --cmaa-verde: #006838; --cmaa-escuro: #004d2c; }
+        :root { --cmaa-verde: #006838; --cmaa-escuro: #004d2c; --cmaa-claro: #e8f5e9; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 3px solid var(--cmaa-verde); padding-bottom: 15px; }
         .logo-site { height: 65px; }
+
+        /* Menu de Abas */
+        .tabs-nav { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 25px; cursor: pointer; border: 1px solid #ddd; background: #f8f9fa; border-radius: 10px; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--cmaa-verde); color: white; border-color: var(--cmaa-verde); }
 
         .controls { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #f8faf9; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e1e8e3; }
         .search-input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex-grow: 1; min-width: 250px; }
@@ -21,7 +28,9 @@
         table { width: 100%; border-collapse: collapse; background: white; }
         th { background: var(--cmaa-verde); color: white; padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.85em; }
         td { padding: 15px; border-bottom: 1px solid #eee; color: #444; }
+        
         .btn-gerar { background: var(--cmaa-verde); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-excel { background: #1d6f42; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; }
 
         /* DESIGN DO CARTÃO */
         #cartao-area {
@@ -53,13 +62,21 @@
 <div class="container">
     <div id="view-lista">
         <div class="header-top">
-            <h2 style="color: var(--cmaa-verde); margin: 0;">Portal de Aniversariantes</h2>
+            <h2 id="tituloPagina" style="color: var(--cmaa-verde); margin: 0;">Aniversariantes de Hoje</h2>
             <img src="Logo.png" class="logo-site" alt="Logo CMAA">
+        </div>
+
+        <div class="tabs-nav">
+            <button class="tab-btn active" id="tabHoje" onclick="mudarAba('hoje')">Hoje</button>
+            <button class="tab-btn" id="tabProximo" onclick="mudarAba('proximo')">Próximo Mês</button>
         </div>
 
         <div class="controls">
             <select id="filtroUnidade" class="select-input" onchange="filtrarTabela()"></select>
             <input type="text" id="buscaNome" class="search-input" placeholder="Buscar por nome do colaborador..." onkeyup="filtrarTabela()">
+            <button id="btnExportar" class="btn-excel" style="display: none;" onclick="exportarExcel()">
+                <span>📊</span> EXPORTAR EXCEL
+            </button>
         </div>
 
         <table>
@@ -68,8 +85,9 @@
                     <th>Unidade</th>
                     <th>Matrícula</th>
                     <th>Colaborador</th>
+                    <th>Data</th>
                     <th>Gestão</th>
-                    <th>Ação</th>
+                    <th id="thAcao">Ação</th>
                 </tr>
             </thead>
             <tbody id="corpoTabela"></tbody>
@@ -107,6 +125,7 @@
 <script>
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTsPqb1UFFuzyGo8kHmqv-XgcHvj38lUKffCZx8Y1Tt8BSmdfp2XD9dBeCakCVNkAMHjhJ-YV3fF3nx/pub?output=csv';
     let baseDados = [];
+    let abaAtual = 'hoje'; // Controle de qual aba está ativa
 
     async function carregar() {
         try {
@@ -132,28 +151,90 @@
         } catch (e) { alert("Erro ao carregar dados da planilha."); }
     }
 
+    function mudarAba(aba) {
+        abaAtual = aba;
+        
+        // Atualiza estilo dos botões
+        document.getElementById('tabHoje').classList.toggle('active', aba === 'hoje');
+        document.getElementById('tabProximo').classList.toggle('active', aba === 'proximo');
+        
+        // Atualiza títulos e visibilidade do botão de exportação
+        document.getElementById('tituloPagina').innerText = aba === 'hoje' ? 'Aniversariantes de Hoje' : 'Aniversariantes do Próximo Mês';
+        document.getElementById('btnExportar').style.display = aba === 'proximo' ? 'flex' : 'none';
+        document.getElementById('thAcao').style.display = aba === 'hoje' ? '' : 'none';
+
+        filtrarTabela();
+    }
+
     function filtrarTabela() {
         const uni = document.getElementById('filtroUnidade').value;
         const busca = document.getElementById('buscaNome').value.toLowerCase();
-        const hoje = new Date();
-        const diaMes = hoje.getDate().toString().padStart(2, '0') + "/" + (hoje.getMonth() + 1).toString().padStart(2, '0');
         
+        const hoje = new Date();
+        const diaHoje = hoje.getDate().toString().padStart(2, '0');
+        const mesHoje = (hoje.getMonth() + 1).toString().padStart(2, '0');
+        
+        // Calcula mês seguinte
+        let proxMesObj = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
+        const mesProximo = (proxMesObj.getMonth() + 1).toString().padStart(2, '0');
+
         const filtrados = baseDados.filter(d => {
             const matchesUni = uni === "TODAS AS UNIDADES" || d.unidade === uni;
             const matchesNome = d.nome.toLowerCase().includes(busca);
-            const eAniversariante = d.data.startsWith(diaMes);
-            return matchesUni && matchesNome && eAniversariante;
+            
+            // Lógica de data baseada na aba
+            const partesData = d.data.split('/');
+            const dDia = partesData[0];
+            const dMes = partesData[1];
+
+            let matchesData = false;
+            if (abaAtual === 'hoje') {
+                matchesData = (dDia === diaHoje && dMes === mesHoje);
+            } else {
+                matchesData = (dMes === mesProximo);
+            }
+
+            return matchesUni && matchesNome && matchesData;
         });
+
+        // Armazena filtrados para exportação
+        window.dadosExportar = filtrados;
 
         document.getElementById('corpoTabela').innerHTML = filtrados.map(d => `
             <tr>
                 <td>${d.unidade}</td>
                 <td>${d.matricula}</td>
                 <td><strong>${d.nome}</strong></td>
+                <td>${d.data}</td>
                 <td>${d.gestao}</td>
-                <td><button class="btn-gerar" onclick="abrirCartao('${d.nome}')">GERAR</button></td>
+                <td style="display: ${abaAtual === 'hoje' ? '' : 'none'}">
+                    <button class="btn-gerar" onclick="abrirCartao('${d.nome}')">GERAR</button>
+                </td>
             </tr>
         `).join('');
+    }
+
+    function exportarExcel() {
+        if (!window.dadosExportar || window.dadosExportar.length === 0) {
+            alert("Não há dados para exportar.");
+            return;
+        }
+
+        // Prepara os dados (remove aspas e formata colunas)
+        const dadosFormatados = window.dadosExportar.map(item => ({
+            Unidade: item.unidade,
+            Matricula: item.matricula,
+            Colaborador: item.nome,
+            Data: item.data,
+            Gestão: item.gestao
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dadosFormatados);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Aniversariantes");
+        
+        const dataRelatorio = new Date().toLocaleDateString().replace(/\//g, '-');
+        XLSX.writeFile(wb, `Aniversariantes_Prox_Mes_${dataRelatorio}.xlsx`);
     }
 
     function abrirCartao(nome) {
@@ -170,7 +251,8 @@
     function gerarPDF() {
         const area = document.getElementById('cartao-area');
         html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
-            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
             pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
             pdf.save(`Cartao_CMAA_${document.getElementById('pdfNome').innerText}.pdf`);
         });
@@ -180,17 +262,15 @@
         const nome = document.getElementById('pdfNome').innerText;
         const area = document.getElementById('cartao-area');
         
-        // 1. Gera e baixa a imagem (JPG é melhor para enviar no Whats)
         html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
             const link = document.createElement('a');
             link.download = `Cartao_${nome}.jpg`;
             link.href = canvas.toDataURL('image/jpeg', 0.9);
             link.click(); 
 
-            // 2. Prepara mensagem e redireciona para o WhatsApp Web
             setTimeout(() => {
                 const msg = encodeURIComponent(`Olá ${nome}, parabéns pelo seu aniversário! Segue o cartão comemorativo da CMAA. (Anexe a imagem que acabamos de baixar)`);
-                window.location.href = `https://web.whatsapp.com/send?text=${msg}`;
+                window.open(`https://web.whatsapp.com/send?text=${msg}`, '_blank');
             }, 800);
         });
     }
