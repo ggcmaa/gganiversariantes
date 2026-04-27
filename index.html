@@ -14,21 +14,17 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
-        /* Cabeçalho */
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 3px solid var(--cmaa-verde); padding-bottom: 15px; }
         .logo-site { height: 65px; }
 
-        /* Navegação por Abas */
         .tabs-nav { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 12px 25px; cursor: pointer; border: 1px solid #ddd; background: #f8f9fa; border-radius: 10px; font-weight: bold; transition: 0.3s; }
         .tab-btn.active { background: var(--cmaa-verde); color: white; border-color: var(--cmaa-verde); }
 
-        /* Controles de Filtro */
         .controls { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #f8faf9; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e1e8e3; }
         .search-input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex-grow: 1; min-width: 250px; }
         .select-input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; min-width: 200px; }
 
-        /* Tabela */
         table { width: 100%; border-collapse: collapse; background: white; }
         th { background: var(--cmaa-verde); color: white; padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.85em; }
         td { padding: 15px; border-bottom: 1px solid #eee; color: #444; }
@@ -36,7 +32,6 @@
         .btn-gerar { background: var(--cmaa-verde); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-excel { background: #1d6f42; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; }
 
-        /* Visualização do Cartão */
         #view-cartao { display: none; }
         #view-cartao.active { display: block; }
         .hidden { display: none; }
@@ -131,25 +126,29 @@
 
 <script>
     // --- CONFIGURAÇÃO DO GITHUB ---
-    // Substitua SEU_USUARIO e SEU_REPOSITORIO pelos seus dados reais do GitHub
     const EXCEL_URL = 'https://raw.githubusercontent.com/ggcmaa/gganiversariantes/main/aniversarios.xlsx';
     
     let baseDados = [];
     let abaAtual = 'hoje';
 
-    // Função para carregar o arquivo .xlsx do GitHub
+    // Função para carregar o arquivo .xlsx do GitHub com melhorias
     async function carregar() {
         try {
+            // Timestamp adicionado para evitar cache
             const response = await fetch(EXCEL_URL + "?t=" + Date.now());
-            if (!response.ok) throw new Error("Erro ao acessar o arquivo data.xlsx no GitHub.");
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: Não foi possível encontrar o arquivo "aniversarios.xlsx". Verifique o link no GitHub.`);
+            }
             
             const buffer = await response.arrayBuffer();
             const workbook = XLSX.read(buffer, { type: 'array' });
-            
-            // Pega a primeira aba
             const abaJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
 
-            // Normaliza os dados (independente de maiúsculas/minúsculas no cabeçalho do Excel)
+            if (!abaJson || abaJson.length === 0) {
+                throw new Error("O arquivo Excel está vazio ou a planilha não pôde ser lida.");
+            }
+
             baseDados = abaJson.map(item => ({
                 unidade: item.Unidade || item.unidade || "N/A",
                 matricula: item.Matricula || item.matricula || "---",
@@ -158,14 +157,20 @@
                 gestao: item.Gestao || item.gestao || "N/A"
             })).filter(d => d.nome !== "Nome não encontrado");
 
-            // Popula o select de unidades
             const unidades = ["TODAS AS UNIDADES", ...new Set(baseDados.map(d => d.unidade))].sort();
             document.getElementById('filtroUnidade').innerHTML = unidades.map(u => `<option value="${u}">${u}</option>`).join('');
 
             filtrarTabela();
         } catch (e) {
-            console.error(e);
-            document.getElementById('corpoTabela').innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Erro ao carregar dados: ${e.message}</td></tr>`;
+            console.error("Erro detalhado:", e);
+            document.getElementById('corpoTabela').innerHTML = `
+                <tr>
+                    <td colspan="6" style="color:#d32f2f; text-align:center; padding: 25px; background: #ffebee;">
+                        <strong>⚠️ Erro ao carregar dados:</strong><br>
+                        ${e.message}<br><br>
+                        <small>Certifique-se que o arquivo existe e o repositório é público.</small>
+                    </td>
+                </tr>`;
         }
     }
 
@@ -194,7 +199,6 @@
             const matchesUni = uniFiltro === "TODAS AS UNIDADES" || d.unidade === uniFiltro;
             const matchesNome = d.nome.toLowerCase().includes(buscaNome);
             
-            // Trata a data (DD/MM ou DD/MM/AAAA)
             const partes = d.data.toString().split('/');
             const dDia = partes[0]?.padStart(2, '0');
             const dMes = partes[1]?.padStart(2, '0');
@@ -203,7 +207,7 @@
             return matchesUni && matchesNome && matchesData;
         });
 
-        window.dadosFiltrados = filtrados; // Salva para exportação
+        window.dadosFiltrados = filtrados;
 
         document.getElementById('corpoTabela').innerHTML = filtrados.length ? filtrados.map(d => `
             <tr>
@@ -268,9 +272,7 @@
         XLSX.writeFile(wb, `Aniversariantes_CMAA.xlsx`);
     }
 
-    // Inicia o carregamento ao abrir a página
     carregar();
 </script>
-
 </body>
 </html>
