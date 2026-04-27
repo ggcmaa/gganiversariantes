@@ -125,57 +125,51 @@
 </div>
 
 <script>
-    // --- CONFIGURAÇÃO DO GITHUB ---
     const EXCEL_URL = 'https://raw.githubusercontent.com/ggcmaa/gganiversariantes/main/aniversarios.xlsx';
     
     let baseDados = [];
     let abaAtual = 'hoje';
 
-    // Função para carregar o arquivo .xlsx do GitHub com melhorias
     async function carregar() {
         try {
-            // Timestamp adicionado para evitar cache do navegador
             const response = await fetch(EXCEL_URL + "?t=" + Date.now());
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: Não foi possível encontrar o arquivo "aniversarios.xlsx". Verifique se o repositório é público ou o link está correto.`);
-            }
+            if (!response.ok) throw new Error("Erro ao acessar o arquivo no GitHub.");
             
             const buffer = await response.arrayBuffer();
             const workbook = XLSX.read(buffer, { type: 'array' });
-            
-            if (!workbook.SheetNames.length) {
-                throw new Error("O arquivo Excel parece não ter planilhas válidas.");
-            }
-
             const abaJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
 
-            if (!abaJson || abaJson.length === 0) {
-                throw new Error("O arquivo Excel está vazio ou os cabeçalhos não foram reconhecidos.");
-            }
+            baseDados = abaJson.map(item => {
+                let dataFormatada = "";
+                let valorData = item.Data || item.data || "";
 
-            baseDados = abaJson.map(item => ({
-                unidade: item.Unidade || item.unidade || "N/A",
-                matricula: item.Matricula || item.matricula || "---",
-                nome: item.Colaborador || item.colaborador || item.Nome || "Nome não encontrado",
-                data: item.Data || item.data || "",
-                gestao: item.Gestao || item.gestao || "N/A"
-            })).filter(d => d.nome !== "Nome não encontrado");
+                if (valorData) {
+                    // Se o Excel importar como número (data serial do Excel)
+                    if (typeof valorData === 'number') {
+                        const dateObj = XLSX.SSF.parse_date_code(valorData);
+                        dataFormatada = `${dateObj.d.toString().padStart(2, '0')}/${dateObj.m.toString().padStart(2, '0')}/${dateObj.y}`;
+                    } else {
+                        // Se já for string (ex: "25/04/1990")
+                        dataFormatada = valorData.toString();
+                    }
+                }
+
+                return {
+                    unidade: item.Unidade || item.unidade || "N/A",
+                    matricula: item.Matricula || item.matricula || "---",
+                    nome: item.Colaborador || item.colaborador || item.Nome || "Nome não encontrado",
+                    data: dataFormatada,
+                    gestao: item.Gestao || item.gestao || "N/A"
+                };
+            }).filter(d => d.nome !== "Nome não encontrado");
 
             const unidades = ["TODAS AS UNIDADES", ...new Set(baseDados.map(d => d.unidade))].sort();
             document.getElementById('filtroUnidade').innerHTML = unidades.map(u => `<option value="${u}">${u}</option>`).join('');
 
             filtrarTabela();
         } catch (e) {
-            console.error("Erro detalhado no carregamento:", e);
-            document.getElementById('corpoTabela').innerHTML = `
-                <tr>
-                    <td colspan="6" style="color:#d32f2f; text-align:center; padding: 25px; background: #ffebee; border-radius: 10px;">
-                        <strong>⚠️ Erro ao carregar dados:</strong><br>
-                        ${e.message}<br><br>
-                        <small>Verifique se o arquivo existe na pasta principal do GitHub e se o nome está idêntico a "aniversarios.xlsx".</small>
-                    </td>
-                </tr>`;
+            console.error(e);
+            document.getElementById('corpoTabela').innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Erro ao carregar dados: ${e.message}</td></tr>`;
         }
     }
 
@@ -204,9 +198,10 @@
             const matchesUni = uniFiltro === "TODAS AS UNIDADES" || d.unidade === uniFiltro;
             const matchesNome = d.nome.toLowerCase().includes(buscaNome);
             
-            const partes = d.data.toString().split('/');
-            const dDia = partes[0]?.padStart(2, '0');
-            const dMes = partes[1]?.padStart(2, '0');
+            // Extração de Dia e Mês do formato DD/MM/YYYY ou DD/MM
+            const partes = d.data.split('/');
+            const dDia = partes[0] ? partes[0].padStart(2, '0') : "";
+            const dMes = partes[1] ? partes[1].padStart(2, '0') : "";
 
             let matchesData = (abaAtual === 'hoje') ? (dDia === diaH && dMes === mesH) : (dMes === mesP);
             return matchesUni && matchesNome && matchesData;
@@ -225,7 +220,7 @@
                     <button class="btn-gerar" onclick="abrirCartao('${d.nome}')">GERAR</button>
                 </td>
             </tr>
-        `).join('') : `<tr><td colspan="6" style="text-align:center; padding: 20px;">Nenhum aniversariante encontrado para esta seleção.</td></tr>`;
+        `).join('') : `<tr><td colspan="6" style="text-align:center;">Nenhum aniversariante encontrado.</td></tr>`;
     }
 
     function abrirCartao(nome) {
@@ -243,7 +238,6 @@
     function gerarPDF() {
         const area = document.getElementById('cartao-area');
         const nomeColaborador = document.getElementById('pdfNome').innerText;
-        
         html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
@@ -255,13 +249,11 @@
     function enviarWhatsApp() {
         const nome = document.getElementById('pdfNome').innerText;
         const area = document.getElementById('cartao-area');
-        
         html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
             const link = document.createElement('a');
             link.download = `Cartao_Aniversario_${nome}.jpg`;
             link.href = canvas.toDataURL('image/jpeg', 0.9);
             link.click(); 
-
             setTimeout(() => {
                 const msg = encodeURIComponent(`Olá ${nome}, a CMAA te deseja um feliz aniversário! Segue seu cartão comemorativo. 🎂🎉`);
                 window.open(`https://web.whatsapp.com/send?text=${msg}`, '_blank');
