@@ -67,7 +67,7 @@
                 </tr>
             </thead>
             <tbody id="corpoTabela">
-                <tr><td colspan="6" style="text-align:center;">Buscando dados no Excel...</td></tr>
+                <tr><td colspan="6" style="text-align:center;">Lendo arquivo Excel...</td></tr>
             </tbody>
         </table>
     </div>
@@ -88,9 +88,8 @@
 </div>
 
 <script>
-    // Tenta carregar o arquivo correto. Se seu arquivo chama 'aniversarios.xlsx', ele vai achar.
     const URL_BASE = 'https://raw.githubusercontent.com/ggcmaa/gganiversariantes/main/';
-    const ARQUIVOS = ['aniversarios.xlsx', 'data.xlsx', 'index.xlsx'];
+    const ARQUIVOS = ['index.xlsx', 'aniversarios.xlsx', 'data.xlsx'];
     
     let baseDados = [];
     let abaAtual = 'hoje';
@@ -104,24 +103,16 @@
                 
                 const buffer = await response.arrayBuffer();
                 const workbook = XLSX.read(buffer, { type: 'array' });
-                const abaJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false });
+                const abaJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
 
                 baseDados = abaJson.map(item => {
-                    // Normaliza os nomes das colunas (tira espaços e deixa minúsculo para busca)
-                    const buscarValor = (listaNomes) => {
-                        for(let n of listaNomes) {
-                            let chave = Object.keys(item).find(k => k.trim().toLowerCase() === n.toLowerCase());
-                            if (chave) return item[chave];
-                        }
-                        return "";
-                    };
-
+                    // Mapeamento exato baseado na sua imagem do Excel
                     return {
-                        unidade: buscarValor(['Unidade', 'unidade']) || "GERAL",
-                        matricula: buscarValor(['Matricula', 'matrícula', 'Matrícula']) || "---",
-                        nome: buscarValor(['Colaborador', 'Nome', 'nome']) || "---",
-                        data: buscarValor(['Data', 'data']) || "",
-                        gestao: buscarValor(['Gestao', 'gestão', 'Gestão']) || "---"
+                        unidade: item["Unidade"] || "GERAL",
+                        matricula: item["Matricula"] || "---",
+                        nome: item["Nome"] || "---",
+                        data: item["Data de Nascimento"] || "",
+                        gestao: item["Gestão"] || item["Gestao"] || "---"
                     };
                 });
 
@@ -135,7 +126,7 @@
             document.getElementById('filtroUnidade').innerHTML = unidades.map(u => `<option value="${u}">${u}</option>`).join('');
             filtrarTabela();
         } else {
-            document.getElementById('corpoTabela').innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Erro: Arquivo Excel não encontrado no GitHub. Verifique se o nome é 'aniversarios.xlsx'.</td></tr>`;
+            document.getElementById('corpoTabela').innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Erro: Arquivo não encontrado. Verifique se o arquivo no GitHub se chama 'index.xlsx'.</td></tr>`;
         }
     }
 
@@ -143,34 +134,22 @@
         const uniFiltro = document.getElementById('filtroUnidade').value;
         const buscaNome = document.getElementById('buscaNome').value.toLowerCase();
         
-        // Data atual do sistema
         const hoje = new Date();
         const diaH = hoje.getDate();
         const mesH = hoje.getMonth() + 1;
-        
         const mesP = (new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1)).getMonth() + 1;
 
         const filtrados = baseDados.filter(d => {
             const matchesUni = uniFiltro === "TODAS AS UNIDADES" || d.unidade === uniFiltro;
             const matchesNome = d.nome.toLowerCase().includes(buscaNome);
             
-            // LÓGICA DE DATA ROBUSTA
-            // Aceita: "27/04/1990", "27/04", "4/27/1990" ou datas do Excel
             let dDia = 0, dMes = 0;
+            const dataLimpa = d.data.toString().trim();
 
-            if (d.data.includes('/')) {
-                const partes = d.data.split('/');
-                // Verifica se é DD/MM ou MM/DD baseado no valor
-                if (parseInt(partes[0]) > 12) { // Claramente Dia/Mes
-                    dDia = parseInt(partes[0]);
-                    dMes = parseInt(partes[1]);
-                } else if (parseInt(partes[1]) > 12) { // Claramente Mes/Dia
-                    dDia = parseInt(partes[1]);
-                    dMes = parseInt(partes[0]);
-                } else { // Inconclusivo (ex 05/06), assume padrão brasileiro DD/MM
-                    dDia = parseInt(partes[0]);
-                    dMes = parseInt(partes[1]);
-                }
+            if (dataLimpa.includes('/')) {
+                const partes = dataLimpa.split('/');
+                dDia = parseInt(partes[0]);
+                dMes = parseInt(partes[1]);
             }
 
             let matchesData = (abaAtual === 'hoje') ? (dDia === diaH && dMes === mesH) : (dMes === mesP);
@@ -216,7 +195,7 @@
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
-            pdf.save("Aniversario.pdf");
+            pdf.save("Aniversario_CMAA.pdf");
         });
     }
 
