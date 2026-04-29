@@ -7,7 +7,6 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -34,7 +33,6 @@
 
         #view-cartao { display: none; text-align: center; }
         
-        /* NOVO DESIGN DO CARTÃO (CLONE DA IMAGEM) */
         #cartao-area { 
             width: 500px; height: 888px; 
             background: #29a64a; 
@@ -46,8 +44,6 @@
         }
 
         .cartao-topo { margin-top: 40px; text-align: center; }
-        .cartao-bolo { width: 120px; margin-bottom: 20px; }
-        
         .faixa-aniversario {
             background: #49c46a; width: 100%; padding: 15px 0;
             font-size: 32px; font-weight: 900; letter-spacing: 2px;
@@ -67,9 +63,6 @@
         .cartao-rodape { margin-top: auto; padding-bottom: 40px; text-align: center; }
         .cartao-logo-img { width: 180px; margin-bottom: 5px; }
         .cartao-slogan { font-size: 14px; font-style: italic; }
-
-        /* Elementos Decorativos Flutuantes */
-        .confete-svg { position: absolute; width: 40px; opacity: 0.6; }
     </style>
 </head>
 <body>
@@ -139,7 +132,7 @@
         </div>
 
         <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px; padding-bottom: 40px;">
-            <button class="btn-acao" onclick="baixarPDF()"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
+            <button class="btn-acao" onclick="baixarPNG()"><i class="fas fa-image"></i> Baixar Imagem (PNG)</button>
             <a id="btnWhatsapp" href="#" target="_blank" class="btn-acao btn-wpp">
                 <i class="fab fa-whatsapp"></i> Enviar para Colaborador
             </a>
@@ -227,15 +220,12 @@
         document.getElementById('view-lista').style.display = 'none';
         document.getElementById('view-cartao').style.display = 'block';
         
-        // Formata Nome e Data (apenas DD/MM)
         document.getElementById('nomeColaborador').innerText = nome.toUpperCase();
         const diaMes = dataCompleta.substring(0, 5);
         document.getElementById('dataColaborador').innerText = diaMes;
 
-        // Limpa telefone e configura link do WhatsApp
         if (telefone) {
             let telLimpo = telefone.replace(/\D/g, '');
-            // Adiciona DDI Brasil se não houver
             if (telLimpo.length <= 11) telLimpo = '55' + telLimpo;
             
             const msg = `Olá ${nome}, a CMAA deseja a você um Feliz Aniversário! Que sua energia continue transformando o nosso mundo. Parabéns! 🎂🎉`;
@@ -251,24 +241,30 @@
         document.getElementById('view-cartao').style.display = 'none';
     }
 
-    function baixarPDF() {
+    function baixarPNG() {
         const area = document.getElementById('cartao-area');
         const nome = document.getElementById('nomeColaborador').innerText;
         
+        document.body.style.cursor = 'wait';
+
         html2canvas(area, { 
-            scale: 2, 
+            scale: 3, 
             useCORS: true,
             backgroundColor: "#29a64a" 
         }).then(canvas => {
-            const pdf = new jspdf.jsPDF('p', 'mm', [132, 235]); // Tamanho proporcional ao cartão
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 132, 235);
-            pdf.save(`Cartao_CMAA_${nome}.pdf`);
+            const link = document.createElement('a');
+            link.download = `Cartao_CMAA_${nome}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            document.body.style.cursor = 'default';
+        }).catch(err => {
+            console.error("Erro ao gerar imagem:", err);
+            document.body.style.cursor = 'default';
         });
     }
 
     function exportarExcel() {
         if(dadosAtuais.length === 0) return;
-        // Cria uma cópia para exportar com os nomes de colunas corretos
         const dadosExport = dadosAtuais.map(item => ({
             Unidade: item.Unidade,
             Matricula: item.Matricula,
